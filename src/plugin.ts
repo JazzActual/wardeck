@@ -3,6 +3,7 @@ import streamDeck from "@elgato/streamdeck";
 import { PlatformSummaryAction } from "./actions/platform-summary";
 import { RefreshAction } from "./actions/refresh";
 import { StatAction } from "./actions/stat";
+import { WardriftBannerAction } from "./actions/wardrift-banner";
 import { statsCache } from "./services/cache";
 import { fetchWdgwarsMe } from "./services/wdgwars";
 import { fetchWardriftDashboard } from "./services/wardrift";
@@ -14,6 +15,7 @@ streamDeck.logger.setLevel("info");
 streamDeck.actions.registerAction(new StatAction());
 streamDeck.actions.registerAction(new PlatformSummaryAction());
 streamDeck.actions.registerAction(new RefreshAction());
+streamDeck.actions.registerAction(new WardriftBannerAction());
 
 type TestConnectionPayload = {
 	event?: string;

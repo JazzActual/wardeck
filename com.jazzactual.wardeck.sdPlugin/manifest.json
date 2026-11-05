@@ -1,7 +1,7 @@
 {
 	"$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
 	"Name": "Wardeck",
-	"Version": "0.2.1.0",
+	"Version": "0.3.0.0",
 	"Author": "JazzActual",
 	"Actions": [
 		{
@@ -47,6 +47,21 @@
 					"TitleAlignment": "middle",
 					"FontSize": 12,
 					"Title": "Refresh"
+				}
+			]
+		},
+		{
+			"Name": "Wardrift Banner",
+			"UUID": "com.jazzactual.wardeck.wardrift-banner",
+			"Icon": "imgs/actions/wardrift-banner/icon",
+			"Tooltip": "Composed Wardrift banner across all four Stream Deck+ dials (display-only).",
+			"Controllers": ["Encoder"],
+			"Encoder": {
+				"layout": "layouts/wardrift-banner.json"
+			},
+			"States": [
+				{
+					"Image": "imgs/actions/wardrift-banner/key"
 				}
 			]
 		}

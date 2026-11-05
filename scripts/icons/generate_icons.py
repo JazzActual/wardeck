@@ -254,6 +254,8 @@ def main() -> None:
     copy_pair(MARKS / "combo" / "key", PLUGIN / "actions" / "platform-summary" / "key")
     copy_pair(MARKS / "combo" / "icon", PLUGIN / "actions" / "refresh" / "icon")
     copy_pair(MARKS / "combo" / "key", PLUGIN / "actions" / "refresh" / "key")
+    copy_pair(MARKS / "wifi" / "icon", PLUGIN / "actions" / "wardrift-banner" / "icon")
+    copy_pair(MARKS / "wifi" / "key", PLUGIN / "actions" / "wardrift-banner" / "key")
 
     copy_pair(MARKS / "wifi" / "key", PLUGIN / "platforms" / "wigle" / "key")
     copy_pair(MARKS / "combo" / "key", PLUGIN / "platforms" / "wdgwars" / "key")

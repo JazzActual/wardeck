@@ -9,15 +9,17 @@
  * from zip metadata. Action settings carry platform/metric only — never
  * credentials (those live in plugin global settings / PI).
  *
- * Layout (4×2 keypad; dials left empty — plugin actions are Keypad-only):
+ * Layout (4×2 keypad + 4 Encoder dials):
  *
  *   Page 1 — WiGLE + WDGWars
  *     [WiGLE Sum] [WiFi GPS] [Rank] [Refresh]
  *     [WDG Sum]   [Total]    [WiFi] [Next →]
+ *     Dials: Wardrift Banner ×4 (composed 800×100 strip)
  *
  *   Page 2 — Wardrift (+ WDGWars BLE)
  *     [← Prev] [Wardrift Sum] [Networks] [Routes]
  *     [BLE]    [Streak]       [free]     [free]
+ *     Dials: Wardrift Banner ×4 (same composed strip)
  */
 
 import { execFileSync } from "node:child_process";
@@ -55,12 +57,19 @@ const PAGE_NEXT = "com.elgato.streamdeck.page.next";
 const UUID = {
 	stat: "com.jazzactual.wardeck.stat",
 	summary: "com.jazzactual.wardeck.platform-summary",
-	refresh: "com.jazzactual.wardeck.refresh"
+	refresh: "com.jazzactual.wardeck.refresh",
+	banner: "com.jazzactual.wardeck.wardrift-banner"
 };
 
 /** Stable ActionIDs per slot (col,row,page) so profile diffs stay readable. */
 function actionId(page, col, row) {
 	const n = page * 100 + row * 10 + col;
+	return `a7e4d1c0-4ade-4ecb-b105-${String(n).padStart(12, "0")}`;
+}
+
+/** Encoder ActionIDs — offset so they never collide with keypad slots. */
+function encoderActionId(page, col) {
+	const n = page * 1000 + 500 + col;
 	return `a7e4d1c0-4ade-4ecb-b105-${String(n).padStart(12, "0")}`;
 }
 
@@ -143,6 +152,29 @@ function refresh(page, col, row) {
 	});
 }
 
+/** Same Wardrift Banner action on every dial — plugin slices one 800×100 strip. */
+function banner(page, col) {
+	return {
+		ActionID: encoderActionId(page, col),
+		LinkedTitle: false,
+		Name: "Wardrift Banner",
+		Resources: null,
+		Settings: {},
+		State: 0,
+		States: [{}],
+		UUID: UUID.banner
+	};
+}
+
+function encoderActions(page) {
+	return {
+		"0,0": banner(page, 0),
+		"1,0": banner(page, 1),
+		"2,0": banner(page, 2),
+		"3,0": banner(page, 3)
+	};
+}
+
 /** Page 1 keypad: WiGLE + WDGWars overview. */
 const page1Keypad = {
 	"0,0": summary(1, 0, 0, "wigle", "WiGLE"),
@@ -177,13 +209,12 @@ const page2Keypad = {
 	"1,1": stat(2, 1, 1, "wardrift", "wardriftMetric", "streak", "Streak")
 };
 
-function pageManifest(keypadActions) {
+function pageManifest(keypadActions, page) {
 	return {
 		Controllers: [
 			{ Type: "Keypad", Actions: keypadActions },
-			// Stream Deck+ profiles carry an Encoder controller (4 dials).
-			// Leave dials unbound — Wardeck actions are Keypad-only for now.
-			{ Type: "Encoder", Actions: {} }
+			// Same Wardrift Banner on all four dials → composed full-strip UI.
+			{ Type: "Encoder", Actions: encoderActions(page) }
 		],
 		Icon: "",
 		Name: ""
@@ -219,8 +250,8 @@ function main() {
 		mkdirSync(page2Dir, { recursive: true });
 
 		writeJson(join(base, "manifest.json"), topManifest());
-		writeJson(join(page1Dir, "manifest.json"), pageManifest(page1Keypad));
-		writeJson(join(page2Dir, "manifest.json"), pageManifest(page2Keypad));
+		writeJson(join(page1Dir, "manifest.json"), pageManifest(page1Keypad, 1));
+		writeJson(join(page2Dir, "manifest.json"), pageManifest(page2Keypad, 2));
 
 		mkdirSync(dirname(OUT), { recursive: true });
 		if (existsSync(OUT)) {
@@ -238,6 +269,7 @@ function main() {
 		console.log("Device: Stream Deck+ (20GBD9901)  DeviceType: 7");
 		console.log("Page 1: WiGLE summary/wifiGps/rank + WDGWars summary/total/wifi + Refresh + Next");
 		console.log("Page 2: Prev + Wardrift summary/networks/routes/streak + WDGWars BLE");
+		console.log("Encoders (both pages): Wardrift Banner ×4");
 	} finally {
 		rmSync(staging, { recursive: true, force: true });
 	}

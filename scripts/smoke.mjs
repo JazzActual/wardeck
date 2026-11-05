@@ -201,9 +201,29 @@ for (const rel of requiredIcons) {
 	assert.ok(fs.existsSync(full), `missing icon ${rel}`);
 }
 
+const bannerIcons = [
+	"imgs/actions/wardrift-banner/icon.png",
+	"imgs/actions/wardrift-banner/icon@2x.png",
+	"imgs/actions/wardrift-banner/key.png",
+	"imgs/actions/wardrift-banner/key@2x.png"
+];
+for (const rel of bannerIcons) {
+	assert.ok(fs.existsSync(path.join(pluginRoot, rel)), `missing icon ${rel}`);
+}
+
+const layoutPath = path.join(pluginRoot, "layouts/wardrift-banner.json");
+assert.ok(fs.existsSync(layoutPath), "missing layouts/wardrift-banner.json");
+const layout = JSON.parse(fs.readFileSync(layoutPath, "utf8"));
+assert.equal(layout.items?.[0]?.key, "banner");
+assert.deepEqual(layout.items?.[0]?.rect, [0, 0, 200, 100]);
+
 const manifest = JSON.parse(fs.readFileSync(path.join(pluginRoot, "manifest.json"), "utf8"));
 assert.equal(manifest.CategoryIcon, "imgs/plugin/category-icon");
 assert.equal(manifest.Icon, "imgs/plugin/marketplace");
+const bannerAction = manifest.Actions.find((a) => a.UUID === "com.jazzactual.wardeck.wardrift-banner");
+assert.ok(bannerAction, "manifest missing wardrift-banner action");
+assert.deepEqual(bannerAction.Controllers, ["Encoder"]);
+assert.equal(bannerAction.Encoder?.layout, "layouts/wardrift-banner.json");
 for (const action of manifest.Actions) {
 	assert.ok(action.Icon, `${action.UUID} missing Icon`);
 	assert.ok(action.States?.[0]?.Image, `${action.UUID} missing state Image`);
@@ -213,5 +233,15 @@ for (const action of manifest.Actions) {
 		`${action.States[0].Image}.png`
 	);
 }
+
+function formatBannerNumber(value) {
+	if (value === null || value === undefined || Number.isNaN(value)) {
+		return "—";
+	}
+	return Math.round(value).toLocaleString("en-US");
+}
+assert.equal(formatBannerNumber(0), "0");
+assert.equal(formatBannerNumber(1284), "1,284");
+assert.equal(formatBannerNumber(null), "—");
 
 console.log("smoke ok");

@@ -60,7 +60,19 @@ The plugin ships a pre-laid **Wardeck** profile for **Stream Deck+** (8 LCD keys
 | --- | --- | --- | --- |
 | WDGWars BLE | Streak | *(free)* | *(free)* |
 
-Dials / touch strip are left unbound (Wardeck actions are Keypad-only; dial support is a later phase). Keys use the plugin’s shared monochrome marks (`imgs/marks/*`).
+**Dials (both pages):** **Wardrift Banner** on all four Stream Deck+ encoders — one composed 800×100 strip sliced into four 200×100 pixmaps. Display-only (no rotate / press / touch handlers). Streak `0` shows as `0`. Keys use the plugin’s shared monochrome marks (`imgs/marks/*`).
+
+### Assign Wardrift Banner to all four Plus dials
+
+The banner only reads as one full strip when **every** dial on the page uses **Wardrift Banner**.
+
+1. In Stream Deck, select your **Stream Deck+** device and the **Wardeck** profile (or any custom profile).
+2. Open the **Wardeck** category in the action list.
+3. Drag **Wardrift Banner** onto dial 1, then dial 2, dial 3, and dial 4 (all four encoders).
+4. Leave dial settings empty — there is no Property Inspector; credentials stay on any Keypad action’s global settings.
+5. If one dial shows a different action (or is empty), you will see a hole or foreign UI in the strip — replace that dial with Wardrift Banner.
+
+New installs of the bundled Plus profile already place Wardrift Banner on all four dials for both pages. Existing Wardeck profiles that were imported earlier keep unbound dials until you assign them (or re-import / rebuild the profile).
 
 ### Install / import
 
@@ -139,6 +151,7 @@ Without credentials, keys show `—` and the plugin still runs (no crash). CI / 
 | **Stat** | Configurable platform + metric (WiGLE / WDGWars / Wardrift). Press = manual refresh for that platform. |
 | **Platform Summary** | Logo-style key with primary metric (WiGLE WiFi GPS / WDGWars Total / Wardrift Networks). Press = open platform site. |
 | **Refresh** | Force refresh all or one platform. |
+| **Wardrift Banner** | Encoder-only. Composes a full-strip Wardrift dashboard across all four Plus dials (name / faction / level·class, networks, routes, threats, streak, coin, to next). Display-only. Shows an empty/error state when Wardrift credentials are missing. |
 
 Default polling: WiGLE **15 min**, WDGWars **5 min**, Wardrift **15 min** (tunable in PI). Cache + exponential backoff on `429` / `5xx`.
 
@@ -157,11 +170,13 @@ White/light on near-black keys; white-on-transparent list glyphs. Bluetooth is t
 ## Project layout
 
 ```
-com.jazzactual.wardeck.sdPlugin/   # packaged plugin (manifest, UI, imgs, profiles, built bin/)
-  profiles/Wardeck.streamDeckProfile   # Stream Deck+ default layout
+com.jazzactual.wardeck.sdPlugin/   # packaged plugin (manifest, UI, imgs, layouts, profiles, built bin/)
+  layouts/wardrift-banner.json         # Encoder full-canvas pixmap layout
+  profiles/Wardeck.streamDeckProfile   # Stream Deck+ default layout (keys + dials)
 src/
   plugin.ts
-  actions/           # stat, platform-summary, refresh
+  actions/           # stat, platform-summary, refresh, wardrift-banner
+  banner/            # 800×100 compose + 4× slice renderer
   services/          # cache, wigle, wdgwars, wardrift
   settings.ts        # Zod schemas
   icons.ts           # key image paths

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Generate Wardeck Stream Deck icons (coherent RF / wardrive geometric set).
+"""Generate Wardeck Stream Deck icons — minimal monochrome geometric set.
 
 Sizes follow Elgato plugin guidelines:
   category 28/56, action list 20/40, key 72/144, marketplace 288/512
-Action-list / category icons are white (#FFFFFF) on transparent.
-Key / marketplace icons use the Wardeck palette on dark fields.
+
+Action-list / category: white stroke on transparent.
+Key / marketplace: white/light strokes on near-black fields.
+Platform distinction is by shape + line weight only (no color coding).
 """
 
 from __future__ import annotations
@@ -16,16 +18,12 @@ from PIL import Image, ImageDraw
 
 PLUGIN = Path(__file__).resolve().parents[2] / "com.jazzactual.wardeck.sdPlugin" / "imgs"
 
-# Palette — radio night, not purple
-NAVY = (11, 28, 36, 255)
-NAVY_SOFT = (18, 42, 52, 255)
-INK = (6, 14, 18, 255)
-SIGNAL = (61, 220, 151, 255)
-TEAL = (43, 187, 173, 255)  # WiGLE mark (original geometry)
-AMBER = (232, 155, 45, 255)  # WDGWars mark
-BLUE = (91, 141, 239, 255)  # Wardrift mark
-SLATE = (148, 173, 184, 255)
+# Monochrome — key-friendly dark field, light marks
+INK = (12, 12, 14, 255)
+INK_SOFT = (22, 22, 26, 255)
 WHITE = (255, 255, 255, 255)
+LIGHT = (230, 230, 232, 255)
+DIM = (160, 160, 165, 255)
 CLEAR = (0, 0, 0, 0)
 
 
@@ -42,52 +40,62 @@ def supersample(draw_fn, size: int, scale: int = 4) -> Image.Image:
     return big.resize((size, size), Image.Resampling.LANCZOS)
 
 
-def lw(size: int, base: float = 2.2) -> int:
+def lw(size: int, base: float) -> int:
+    """Stroke width scaled from a 72px reference."""
     return max(1, round(size * base / 72))
 
 
-def radar(draw: ImageDraw.ImageDraw, size: int, color, cx: int, cy: int, max_r: int, width: int) -> None:
-    for frac in (0.4, 0.7, 1.0):
+def key_field(draw: ImageDraw.ImageDraw, size: int) -> None:
+    draw.rectangle([0, 0, size, size], fill=INK)
+    # subtle upper band — still monochrome, helps title contrast below
+    draw.rectangle([0, 0, size, int(size * 0.40)], fill=INK_SOFT)
+
+
+def radar(
+    draw: ImageDraw.ImageDraw,
+    color,
+    cx: int,
+    cy: int,
+    max_r: int,
+    width: int,
+    arcs: tuple[float, ...] = (0.45, 0.72, 1.0),
+    with_beam: bool = True,
+) -> None:
+    for frac in arcs:
         r = int(max_r * frac)
         draw.arc([cx - r, cy - r, cx + r, cy + r], start=220, end=40, fill=color, width=width)
-    angle = math.radians(-35)
-    draw.line(
-        [(cx, cy), (cx + int(max_r * math.cos(angle)), cy + int(max_r * math.sin(angle)))],
-        fill=color,
-        width=width,
-    )
-    br = max(1, size // 28)
+    if with_beam:
+        angle = math.radians(-40)
+        draw.line(
+            [(cx, cy), (cx + int(max_r * math.cos(angle)), cy + int(max_r * math.sin(angle)))],
+            fill=color,
+            width=width,
+        )
+    br = max(1, width)
     draw.ellipse([cx - br, cy - br, cx + br, cy + br], fill=color)
 
 
-def signal_bars(
+def bars(
     draw: ImageDraw.ImageDraw,
-    size: int,
     color,
     origin: tuple[int, int],
-    bar_w: int | None = None,
-    gap: int | None = None,
-    heights: tuple[float, ...] = (0.35, 0.55, 0.8, 1.0),
-    max_h_frac: float = 0.22,
+    bar_w: int,
+    gap: int,
+    heights: tuple[float, ...],
+    max_h: int,
 ) -> None:
     x0, y0 = origin
-    bar_w = max(2, size // 18) if bar_w is None else bar_w
-    gap = max(1, size // 36) if gap is None else gap
-    max_h = int(size * max_h_frac)
     for i, h in enumerate(heights):
         bh = max(2, int(max_h * h))
         x = x0 + i * (bar_w + gap)
-        draw.rounded_rectangle(
-            [x, y0 - bh, x + bar_w, y0],
-            radius=max(1, bar_w // 3),
-            fill=color,
-        )
+        draw.rectangle([x, y0 - bh, x + bar_w, y0], fill=color)
 
 
-def refresh_arrows(draw: ImageDraw.ImageDraw, size: int, color, cx: int, cy: int, r: int, width: int) -> None:
-    draw.arc([cx - r, cy - r, cx + r, cy + r], start=40, end=200, fill=color, width=width)
-    draw.arc([cx - r, cy - r, cx + r, cy + r], start=220, end=20, fill=color, width=width)
-    head = max(3, size // 16)
+def refresh_arrows(
+    draw: ImageDraw.ImageDraw, color, cx: int, cy: int, r: int, width: int, head: int
+) -> None:
+    draw.arc([cx - r, cy - r, cx + r, cy + r], start=45, end=195, fill=color, width=width)
+    draw.arc([cx - r, cy - r, cx + r, cy + r], start=225, end=15, fill=color, width=width)
 
     def arrow_at(deg: float) -> None:
         rad = math.radians(deg)
@@ -97,90 +105,120 @@ def refresh_arrows(draw: ImageDraw.ImageDraw, size: int, color, cx: int, cy: int
         draw.polygon(
             [
                 (x, y),
-                (x - int(head * math.cos(tang - 0.55)), y - int(head * math.sin(tang - 0.55))),
-                (x - int(head * math.cos(tang + 0.55)), y - int(head * math.sin(tang + 0.55))),
+                (x - int(head * math.cos(tang - 0.6)), y - int(head * math.sin(tang - 0.6))),
+                (x - int(head * math.cos(tang + 0.6)), y - int(head * math.sin(tang + 0.6))),
             ],
             fill=color,
         )
 
-    arrow_at(40)
-    arrow_at(220)
+    arrow_at(45)
+    arrow_at(225)
 
 
-def key_chrome(draw: ImageDraw.ImageDraw, size: int, accent) -> None:
-    draw.rectangle([0, 0, size, size], fill=NAVY)
-    draw.rectangle([0, 0, size, int(size * 0.42)], fill=NAVY_SOFT)
-    tick = max(2, size // 24)
-    draw.rectangle([0, 0, tick * 3, tick], fill=accent)
+def shield(draw: ImageDraw.ImageDraw, color, size: int, width: int) -> None:
+    """Compact angular shield in the upper title-safe zone — heavier stroke."""
+    cx = size // 2
+    top = int(size * 0.10)
+    bot = int(size * 0.40)
+    left = int(size * 0.32)
+    right = int(size * 0.68)
+    path = [
+        (cx, top),
+        (right, int(size * 0.18)),
+        (right - size // 40, int(size * 0.28)),
+        (cx, bot),
+        (left + size // 40, int(size * 0.28)),
+        (left, int(size * 0.18)),
+    ]
+    draw.line(path + [path[0]], fill=color, width=width)
+    # single inner chevron — shape identity
+    mid = int(size * 0.22)
+    draw.line(
+        [(int(size * 0.40), mid), (cx, int(size * 0.32)), (int(size * 0.60), mid)],
+        fill=color,
+        width=width,
+    )
+
+
+def route(draw: ImageDraw.ImageDraw, color, size: int, width: int) -> None:
+    """Open polyline + hollow nodes — medium weight, distinct from radar/shield."""
+    pts = [
+        (int(size * 0.18), int(size * 0.34)),
+        (int(size * 0.38), int(size * 0.16)),
+        (int(size * 0.58), int(size * 0.30)),
+        (int(size * 0.82), int(size * 0.14)),
+    ]
+    draw.line(pts, fill=color, width=width, joint="curve")
+    nr = max(2, width + size // 36)
+    for x, y in pts:
+        # hollow nodes (ring) for shape contrast vs filled radar blip
+        draw.ellipse([x - nr, y - nr, x + nr, y + nr], outline=color, width=max(1, width - 1))
+
+
+# --- Mono list / category (transparent) ---
 
 
 def make_mono_category(size: int) -> Image.Image:
     def paint(draw, s):
-        radar(draw, s, WHITE, s // 2, s // 2, int(s * 0.42), max(2, s // 14))
-        cy = s // 2 + int(s * 0.18)
-        draw.line(
-            [(s // 2 - int(s * 0.18), cy), (s // 2 + int(s * 0.18), cy)],
-            fill=WHITE,
-            width=max(2, s // 16),
-        )
+        radar(draw, WHITE, s // 2, s // 2, int(s * 0.40), max(2, s // 16), with_beam=True)
+        y = s // 2 + int(s * 0.22)
+        draw.line([(s // 2 - int(s * 0.16), y), (s // 2 + int(s * 0.16), y)], fill=WHITE, width=max(2, s // 18))
 
     return supersample(paint, size)
 
 
 def make_mono_stat(size: int) -> Image.Image:
     def paint(draw, s):
-        m = int(s * 0.18)
-        w = max(2, s // 12)
+        m = int(s * 0.16)
+        w = max(2, s // 14)
         draw.line([(m, m), (m, s - m)], fill=WHITE, width=w)
         draw.line([(m, s - m), (s - m, s - m)], fill=WHITE, width=w)
-        bars = (0.45, 0.65, 0.85, 1.0)
+        bw = max(2, s // 11)
+        gap = max(1, s // 20)
+        x = m + max(2, s // 12)
         base = s - m
         max_h = s - 2 * m
-        bw = max(2, s // 10)
-        gap = max(1, s // 18)
-        x = m + max(2, s // 10)
-        for i, h in enumerate(bars):
+        for i, h in enumerate((0.4, 0.65, 0.5, 0.9)):
             bh = int(max_h * h * 0.85)
-            draw.rounded_rectangle(
-                [x + i * (bw + gap), base - bh, x + i * (bw + gap) + bw, base],
-                radius=max(1, bw // 3),
-                fill=WHITE,
-            )
+            draw.rectangle([x + i * (bw + gap), base - bh, x + i * (bw + gap) + bw, base], fill=WHITE)
 
     return supersample(paint, size)
 
 
 def make_mono_summary(size: int) -> Image.Image:
     def paint(draw, s):
-        m = int(s * 0.12)
-        draw.rounded_rectangle(
-            [m, m, s - m, s - m],
-            radius=s // 6,
-            outline=WHITE,
-            width=max(2, s // 12),
-        )
-        radar(draw, s, WHITE, s // 2, s // 2, int(s * 0.28), max(2, s // 14))
+        m = int(s * 0.14)
+        draw.rectangle([m, m, s - m, s - m], outline=WHITE, width=max(2, s // 14))
+        # single center blip — quieter than full radar
+        c = s // 2
+        br = max(2, s // 10)
+        draw.ellipse([c - br, c - br, c + br, c + br], outline=WHITE, width=max(2, s // 16))
 
     return supersample(paint, size)
 
 
 def make_mono_refresh(size: int) -> Image.Image:
     def paint(draw, s):
-        refresh_arrows(draw, s, WHITE, s // 2, s // 2, int(s * 0.34), max(2, s // 10))
+        refresh_arrows(draw, WHITE, s // 2, s // 2, int(s * 0.32), max(2, s // 12), max(3, s // 8))
 
     return supersample(paint, size)
 
 
+# --- Key tiles (dark + light) ---
+
+
 def make_key_stat(size: int) -> Image.Image:
     def paint(draw, s):
-        key_chrome(draw, s, SIGNAL)
-        signal_bars(
+        key_field(draw, s)
+        # thin bars — metric feel
+        bars(
             draw,
-            s,
-            SIGNAL,
-            origin=(int(s * 0.28), int(s * 0.38)),
-            bar_w=max(3, s // 14),
-            gap=max(2, s // 28),
+            LIGHT,
+            origin=(int(s * 0.30), int(s * 0.36)),
+            bar_w=max(2, lw(s, 3.5)),
+            gap=max(2, lw(s, 2.5)),
+            heights=(0.4, 0.65, 0.5, 0.95),
+            max_h=int(s * 0.22),
         )
 
     return supersample(paint, size)
@@ -188,80 +226,68 @@ def make_key_stat(size: int) -> Image.Image:
 
 def make_key_summary(size: int) -> Image.Image:
     def paint(draw, s):
-        key_chrome(draw, s, SIGNAL)
-        radar(draw, s, SIGNAL, s // 2, int(s * 0.30), int(s * 0.26), lw(s, 2.4))
-        signal_bars(
-            draw,
-            s,
-            SLATE,
-            origin=(int(s * 0.62), int(s * 0.40)),
-            bar_w=max(2, s // 18),
-            gap=max(1, s // 40),
-            heights=(0.4, 0.65, 0.9),
-            max_h_frac=0.16,
-        )
+        key_field(draw, s)
+        # light square frame + center blip (generic platform)
+        m_x = int(s * 0.32)
+        m_y = int(s * 0.10)
+        w = lw(s, 1.8)
+        draw.rectangle([m_x, m_y, s - m_x, int(s * 0.38)], outline=LIGHT, width=w)
+        c = s // 2
+        cy = int(s * 0.24)
+        br = max(2, lw(s, 2.5))
+        draw.ellipse([c - br, cy - br, c + br, cy + br], fill=LIGHT)
 
     return supersample(paint, size)
 
 
 def make_key_refresh(size: int) -> Image.Image:
     def paint(draw, s):
-        key_chrome(draw, s, SIGNAL)
-        refresh_arrows(draw, s, SIGNAL, s // 2, int(s * 0.30), int(s * 0.18), lw(s, 2.6))
-
-    return supersample(paint, size)
-
-
-def make_key_wigle(size: int) -> Image.Image:
-    def paint(draw, s):
-        key_chrome(draw, s, TEAL)
-        radar(draw, s, TEAL, s // 2, int(s * 0.30), int(s * 0.26), lw(s, 2.4))
-
-    return supersample(paint, size)
-
-
-def make_key_wdgwars(size: int) -> Image.Image:
-    def paint(draw, s):
-        key_chrome(draw, s, AMBER)
-        cx = s // 2
-        top = int(s * 0.10)
-        bot = int(s * 0.42)
-        left = int(s * 0.30)
-        right = int(s * 0.70)
-        w = lw(s, 2.4)
-        path = [
-            (cx, top),
-            (right, int(s * 0.18)),
-            (right - s // 36, int(s * 0.30)),
-            (cx, bot),
-            (left + s // 36, int(s * 0.30)),
-            (left, int(s * 0.18)),
-        ]
-        draw.line(path + [path[0]], fill=AMBER, width=w)
-        mid_y = int(s * 0.24)
-        draw.line(
-            [(int(s * 0.38), mid_y), (cx, int(s * 0.34)), (int(s * 0.62), mid_y)],
-            fill=AMBER,
-            width=w,
+        key_field(draw, s)
+        refresh_arrows(
+            draw,
+            LIGHT,
+            s // 2,
+            int(s * 0.28),
+            int(s * 0.16),
+            lw(s, 2.2),
+            max(3, lw(s, 4)),
         )
 
     return supersample(paint, size)
 
 
-def make_key_wardrift(size: int) -> Image.Image:
+def make_key_wigle(size: int) -> Image.Image:
+    """Thin multi-arc radar — densest linework, lightest stroke."""
     def paint(draw, s):
-        key_chrome(draw, s, BLUE)
-        pts = [
-            (int(s * 0.16), int(s * 0.34)),
-            (int(s * 0.36), int(s * 0.18)),
-            (int(s * 0.58), int(s * 0.30)),
-            (int(s * 0.84), int(s * 0.14)),
-        ]
-        w = lw(s, 2.4)
-        draw.line(pts, fill=BLUE, width=w, joint="curve")
-        nr = max(2, s // 22)
-        for x, y in pts:
-            draw.ellipse([x - nr, y - nr, x + nr, y + nr], fill=BLUE)
+        key_field(draw, s)
+        radar(
+            draw,
+            LIGHT,
+            s // 2,
+            int(s * 0.28),
+            int(s * 0.24),
+            lw(s, 1.5),
+            arcs=(0.4, 0.7, 1.0),
+            with_beam=True,
+        )
+
+    return supersample(paint, size)
+
+
+def make_key_wdgwars(size: int) -> Image.Image:
+    """Heavy angular shield — thickest stroke, fewest lines."""
+    def paint(draw, s):
+        key_field(draw, s)
+        shield(draw, LIGHT, s, lw(s, 2.8))
+
+    return supersample(paint, size)
+
+
+def make_key_wardrift(size: int) -> Image.Image:
+    """Medium polyline with hollow nodes — open path vs closed shield/radar."""
+    def paint(draw, s):
+        key_field(draw, s)
+        route(draw, LIGHT, s, lw(s, 2.0))
 
     return supersample(paint, size)
 
@@ -269,26 +295,22 @@ def make_key_wardrift(size: int) -> Image.Image:
 def make_marketplace(size: int) -> Image.Image:
     def paint(draw, s):
         draw.rectangle([0, 0, s, s], fill=INK)
-        m = int(s * 0.08)
-        draw.rounded_rectangle(
-            [m, m, s - m, s - m],
-            radius=s // 8,
-            outline=NAVY_SOFT,
-            width=max(2, s // 48),
-        )
-        radar(draw, s, SIGNAL, s // 2, int(s * 0.46), int(s * 0.32), max(3, s // 28))
-        y = int(s * 0.78)
-        draw.line([(int(s * 0.28), y), (int(s * 0.72), y)], fill=SLATE, width=max(3, s // 40))
-        signal_bars(
+        # quiet inset frame
+        m = int(s * 0.10)
+        draw.rectangle([m, m, s - m, s - m], outline=DIM, width=max(2, s // 64))
+        radar(
             draw,
-            s,
-            AMBER,
-            origin=(int(s * 0.58), int(s * 0.70)),
-            bar_w=max(4, s // 22),
-            gap=max(3, s // 40),
-            heights=(0.45, 0.7, 1.0),
-            max_h_frac=0.14,
+            LIGHT,
+            s // 2,
+            int(s * 0.46),
+            int(s * 0.28),
+            max(2, s // 36),
+            arcs=(0.45, 0.72, 1.0),
+            with_beam=True,
         )
+        # thin baseline — brand footing
+        y = int(s * 0.78)
+        draw.line([(int(s * 0.32), y), (int(s * 0.68), y)], fill=DIM, width=max(2, s // 64))
 
     rgba = supersample(paint, size)
     rgb = Image.new("RGB", (size, size), INK[:3])

@@ -101,17 +101,17 @@ Default polling: WiGLE **15 min**, WDGWars **5 min**, Wardrift **15 min** (tunab
 
 ## Icons
 
-Custom geometric key art (RF / wardrive vibe — original marks, no third-party logos):
+Minimal **monochrome** geometric marks (white/light on near-black keys; white-on-transparent action-list glyphs). Original shapes only — no third-party logos, no color coding.
 
 | Asset | Role |
 | --- | --- |
-| `imgs/plugin/category-icon` | Action-list category (28 / 56, white mono) |
+| `imgs/plugin/category-icon` | Action-list category (28 / 56) |
 | `imgs/plugin/marketplace` | Plugin / preferences icon (288 / 512) |
-| `imgs/actions/*/icon` | Action-list glyphs (20 / 40, white mono) |
+| `imgs/actions/*/icon` | Action-list glyphs (20 / 40) |
 | `imgs/actions/*/key` | Default key tiles (72 / 144) |
 | `imgs/platforms/{wigle,wdgwars,wardrift,all}/key` | Platform tiles selected at runtime |
 
-Stat / Platform Summary / Refresh call `setImage` for the active platform (teal radar, amber shield, blue route, green refresh). Regenerate with `npm run icons` (requires Pillow).
+Platform distinction is by **shape + stroke weight** (WiGLE thin radar arcs, WDGWars heavy shield, Wardrift medium route nodes, Refresh arrows). Regenerate with `npm run icons` (requires Pillow).
 
 ## Project layout
 

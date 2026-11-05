@@ -256,6 +256,10 @@ def main() -> None:
     copy_pair(MARKS / "combo" / "key", PLUGIN / "actions" / "refresh" / "key")
     copy_pair(MARKS / "wifi" / "icon", PLUGIN / "actions" / "wardrift-banner" / "icon")
     copy_pair(MARKS / "wifi" / "key", PLUGIN / "actions" / "wardrift-banner" / "key")
+    copy_pair(MARKS / "wifi" / "icon", PLUGIN / "actions" / "wigle-banner" / "icon")
+    copy_pair(MARKS / "wifi" / "key", PLUGIN / "actions" / "wigle-banner" / "key")
+    copy_pair(MARKS / "combo" / "icon", PLUGIN / "actions" / "wdgwars-banner" / "icon")
+    copy_pair(MARKS / "combo" / "key", PLUGIN / "actions" / "wdgwars-banner" / "key")
 
     copy_pair(MARKS / "wifi" / "key", PLUGIN / "platforms" / "wigle" / "key")
     copy_pair(MARKS / "combo" / "key", PLUGIN / "platforms" / "wdgwars" / "key")

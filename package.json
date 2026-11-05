@@ -1,7 +1,7 @@
 {
 	"name": "wardeck",
-	"version": "0.1.0",
-	"description": "Elgato Stream Deck plugin that displays WiGLE and WDGWars wardriving statistics",
+	"version": "0.2.0",
+	"description": "Elgato Stream Deck plugin that displays WiGLE, WDGWars, and Wardrift wardriving statistics",
 	"type": "module",
 	"scripts": {
 		"build": "rollup -c",

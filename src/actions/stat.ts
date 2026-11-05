@@ -9,10 +9,12 @@ import {
 import { EMPTY_TITLE, formatCompactNumber } from "../formatting.js";
 import { statsCache } from "../services/cache.js";
 import { readWdgwarsMetric } from "../services/wdgwars.js";
+import { readWardriftMetric } from "../services/wardrift.js";
 import { readWigleMetric } from "../services/wigle.js";
 import {
 	parseStatSettings,
 	type StatActionSettings,
+	WARDRIFT_METRIC_LABELS,
 	WDGWARS_METRIC_LABELS,
 	WIGLE_METRIC_LABELS
 } from "../settings.js";
@@ -73,10 +75,7 @@ export function resolveStatDisplay(settings: StatActionSettings): {
 	if (settings.platform === "wigle") {
 		const entry = statsCache.getWigle();
 		const label = WIGLE_METRIC_LABELS[settings.wigleMetric];
-		if (!entry.configured) {
-			return { subtitle: label, title: EMPTY_TITLE };
-		}
-		if (!entry.data) {
+		if (!entry.configured || !entry.data) {
 			return { subtitle: label, title: EMPTY_TITLE };
 		}
 		const value = readWigleMetric(entry.data, settings.wigleMetric);
@@ -86,12 +85,25 @@ export function resolveStatDisplay(settings: StatActionSettings): {
 		};
 	}
 
-	const entry = statsCache.getWdgwars();
-	const label = WDGWARS_METRIC_LABELS[settings.wdgwarsMetric];
+	if (settings.platform === "wdgwars") {
+		const entry = statsCache.getWdgwars();
+		const label = WDGWARS_METRIC_LABELS[settings.wdgwarsMetric];
+		if (!entry.configured || !entry.data) {
+			return { subtitle: label, title: EMPTY_TITLE };
+		}
+		const value = readWdgwarsMetric(entry.data, settings.wdgwarsMetric);
+		return {
+			subtitle: label,
+			title: typeof value === "string" ? truncate(value, 10) : formatCompactNumber(value)
+		};
+	}
+
+	const entry = statsCache.getWardrift();
+	const label = WARDRIFT_METRIC_LABELS[settings.wardriftMetric];
 	if (!entry.configured || !entry.data) {
 		return { subtitle: label, title: EMPTY_TITLE };
 	}
-	const value = readWdgwarsMetric(entry.data, settings.wdgwarsMetric);
+	const value = readWardriftMetric(entry.data, settings.wardriftMetric);
 	return {
 		subtitle: label,
 		title: typeof value === "string" ? truncate(value, 10) : formatCompactNumber(value)

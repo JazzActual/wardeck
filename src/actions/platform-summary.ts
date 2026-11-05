@@ -66,10 +66,19 @@ export class PlatformSummaryAction extends SingletonAction<PlatformSummarySettin
 			return;
 		}
 
-		const entry = statsCache.getWdgwars();
-		const primary = entry.data?.total;
+		if (settings.platform === "wdgwars") {
+			const entry = statsCache.getWdgwars();
+			const primary = entry.data?.total;
+			await action.setTitle(
+				`WDGWars\n${entry.configured ? formatCompactNumber(primary) : EMPTY_TITLE}`
+			);
+			return;
+		}
+
+		const entry = statsCache.getWardrift();
+		const primary = entry.data?.wardrive?.lifetime?.access_points_discovered;
 		await action.setTitle(
-			`WDGWars\n${entry.configured ? formatCompactNumber(primary) : EMPTY_TITLE}`
+			`Wardrift\n${entry.configured ? formatCompactNumber(primary) : EMPTY_TITLE}`
 		);
 	}
 }

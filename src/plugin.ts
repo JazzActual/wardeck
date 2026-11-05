@@ -5,6 +5,7 @@ import { RefreshAction } from "./actions/refresh";
 import { StatAction } from "./actions/stat";
 import { statsCache } from "./services/cache";
 import { fetchWdgwarsMe } from "./services/wdgwars";
+import { fetchWardriftDashboard } from "./services/wardrift";
 import { fetchWigleUserStats } from "./services/wigle";
 import { parseGlobalSettings } from "./settings";
 
@@ -26,7 +27,12 @@ streamDeck.ui.onSendToPlugin(async (ev) => {
 	}
 
 	const settings = parseGlobalSettings(await streamDeck.settings.getGlobalSettings());
-	const platform = payload.platform === "wdgwars" ? "wdgwars" : "wigle";
+	const platform =
+		payload.platform === "wdgwars"
+			? "wdgwars"
+			: payload.platform === "wardrift"
+				? "wardrift"
+				: "wigle";
 
 	if (platform === "wigle") {
 		const result = await fetchWigleUserStats(settings);
@@ -44,17 +50,34 @@ streamDeck.ui.onSendToPlugin(async (ev) => {
 		return;
 	}
 
-	const result = await fetchWdgwarsMe(settings);
+	if (platform === "wdgwars") {
+		const result = await fetchWdgwarsMe(settings);
+		await streamDeck.ui.sendToPropertyInspector({
+			event: "testConnectionResult",
+			platform,
+			ok: result.ok,
+			message: result.ok
+				? `Connected as ${result.data.username ?? "WDGWars user"}.`
+				: result.error
+		});
+		if (result.ok) {
+			await statsCache.refresh("wdgwars", true);
+		}
+		return;
+	}
+
+	const result = await fetchWardriftDashboard(settings);
+	const characterName = result.ok ? result.data.characters?.[0]?.name : undefined;
 	await streamDeck.ui.sendToPropertyInspector({
 		event: "testConnectionResult",
 		platform,
 		ok: result.ok,
 		message: result.ok
-			? `Connected as ${result.data.username ?? "WDGWars user"}.`
+			? `Connected as ${characterName ?? (settings.wardriftUsername.trim() || "Wardrift user")}.`
 			: result.error
 	});
 	if (result.ok) {
-		await statsCache.refresh("wdgwars", true);
+		await statsCache.refresh("wardrift", true);
 	}
 });
 

@@ -84,6 +84,47 @@ def bluetooth_glyph(size: int, color: str = "#EBEBEE", stroke: float = 3.2) -> I
     return Image.open(BytesIO(png)).convert("RGBA")
 
 
+def content_bbox(im: Image.Image, alpha_min: int = 24) -> tuple[int, int, int, int]:
+    """Tight bbox of non-transparent pixels (left, top, right, bottom) exclusive-right/bottom."""
+    alpha = im.split()[-1]
+    mask = alpha.point(lambda a: 255 if a >= alpha_min else 0)
+    box = mask.getbbox()
+    if box is None:
+        return (0, 0, im.width, im.height)
+    return box
+
+
+def crop_content(im: Image.Image) -> Image.Image:
+    l, t, r, b = content_bbox(im)
+    return im.crop((l, t, r, b))
+
+
+def bluetooth_fitted(target_h: int, color: str = "#EBEBEE", stroke: float = 3.4) -> Image.Image:
+    """Standard BT rune scaled so its glyph bounding-box height == target_h."""
+    raw = bluetooth_glyph(max(target_h * 4, 64), color=color, stroke=stroke)
+    cropped = crop_content(raw)
+    if cropped.height <= 0:
+        return cropped
+    scale = target_h / cropped.height
+    new_w = max(1, round(cropped.width * scale))
+    return cropped.resize((new_w, target_h), Image.Resampling.LANCZOS)
+
+
+def wifi_layer(
+    size: int,
+    color,
+    cx: int,
+    cy: int,
+    max_r: int,
+    width: int,
+) -> tuple[Image.Image, int]:
+    """Draw wifi on transparent canvas; return (layer, content_height)."""
+    layer = Image.new("RGBA", (size, size), CLEAR)
+    draw_wifi(ImageDraw.Draw(layer), color, cx, cy, max_r, width)
+    _l, t, _r, b = content_bbox(layer)
+    return layer, max(1, b - t)
+
+
 def paste_center(base: Image.Image, glyph: Image.Image, cx: int, cy: int) -> None:
     x = int(cx - glyph.width / 2)
     y = int(cy - glyph.height / 2)
@@ -98,22 +139,29 @@ def make_mono_wifi(size: int) -> Image.Image:
 
 
 def make_mono_bluetooth(size: int) -> Image.Image:
-    # Slightly inset so stroke isn't clipped; white on transparent
-    g = bluetooth_glyph(max(size - 2, 8), color="#FFFFFF", stroke=3.6)
-    g = g.resize((size, size), Image.Resampling.LANCZOS)
-    return g
+    # Match wifi mono glyph height at this canvas size
+    wifi = make_mono_wifi(size)
+    _l, t, _r, b = content_bbox(wifi)
+    target_h = max(1, b - t)
+    bt = bluetooth_fitted(target_h, color="#FFFFFF", stroke=3.6)
+    out = Image.new("RGBA", (size, size), CLEAR)
+    paste_center(out, bt, size // 2, size // 2)
+    return out
 
 
 def make_mono_combo(size: int) -> Image.Image:
     img = Image.new("RGBA", (size, size), CLEAR)
-    # wifi via supersampled draw into temp
     wifi = supersample(
-        lambda d, s: draw_wifi(d, WHITE, int(s * 0.38), int(s * 0.62), int(s * 0.30), max(2, s // 16)),
+        lambda d, s: draw_wifi(d, WHITE, int(s * 0.36), int(s * 0.58), int(s * 0.28), max(2, s // 16)),
         size,
     )
     img.alpha_composite(wifi)
-    bt = bluetooth_glyph(max(int(size * 0.55), 8), color="#FFFFFF", stroke=3.4)
-    paste_center(img, bt, int(size * 0.72), int(size * 0.48))
+    _l, t, _r, b = content_bbox(wifi)
+    target_h = max(1, b - t)
+    # Align BT to same vertical span as wifi content
+    mid_y = (t + b) / 2
+    bt = bluetooth_fitted(target_h, color="#FFFFFF", stroke=3.4)
+    paste_center(img, bt, int(size * 0.74), int(mid_y))
     return img
 
 
@@ -129,10 +177,14 @@ def make_key_bluetooth(size: int) -> Image.Image:
     img = Image.new("RGBA", (size, size), CLEAR)
     draw = ImageDraw.Draw(img)
     key_field(draw, size)
-    # Glyph sized for upper title-safe zone — bold standard rune
-    gsize = int(size * 0.50)
-    bt = bluetooth_glyph(gsize, color="#EBEBEE", stroke=3.6)
-    paste_center(img, bt, size // 2, int(size * 0.28))
+    # Reference wifi glyph height at the same key layout
+    wifi, target_h = wifi_layer(
+        size, LIGHT, size // 2, int(size * 0.34), int(size * 0.22), lw(size, 2.0)
+    )
+    _l, t, _r, b = content_bbox(wifi)
+    mid_y = (t + b) / 2
+    bt = bluetooth_fitted(target_h, color="#EBEBEE", stroke=3.4)
+    paste_center(img, bt, size // 2, int(mid_y))
     return img
 
 
@@ -140,15 +192,14 @@ def make_key_combo(size: int) -> Image.Image:
     img = Image.new("RGBA", (size, size), CLEAR)
     draw = ImageDraw.Draw(img)
     key_field(draw, size)
-    # wifi left
-    tmp = Image.new("RGBA", (size, size), CLEAR)
-    td = ImageDraw.Draw(tmp)
-    draw_wifi(td, LIGHT, int(size * 0.32), int(size * 0.34), int(size * 0.16), lw(size, 1.8))
-    img.alpha_composite(tmp)
-    # same standard BT rune as standalone mark
-    gsize = int(size * 0.36)
-    bt = bluetooth_glyph(gsize, color="#EBEBEE", stroke=3.6)
-    paste_center(img, bt, int(size * 0.72), int(size * 0.28))
+    wifi, target_h = wifi_layer(
+        size, LIGHT, int(size * 0.32), int(size * 0.34), int(size * 0.16), lw(size, 1.8)
+    )
+    img.alpha_composite(wifi)
+    _l, t, _r, b = content_bbox(wifi)
+    mid_y = (t + b) / 2
+    bt = bluetooth_fitted(target_h, color="#EBEBEE", stroke=3.4)
+    paste_center(img, bt, int(size * 0.72), int(mid_y))
     return img
 
 
@@ -158,13 +209,14 @@ def make_marketplace(size: int) -> Image.Image:
     draw.rectangle([0, 0, size, size], fill=INK)
     m = int(size * 0.10)
     draw.rectangle([m, m, size - m, size - m], outline=DIM, width=max(2, size // 64))
-    tmp = Image.new("RGBA", (size, size), CLEAR)
-    td = ImageDraw.Draw(tmp)
-    draw_wifi(td, LIGHT, int(size * 0.38), int(size * 0.52), int(size * 0.22), max(2, size // 40))
-    img.alpha_composite(tmp)
-    gsize = int(size * 0.28)
-    bt = bluetooth_glyph(gsize, color="#EBEBEE", stroke=3.2)
-    paste_center(img, bt, int(size * 0.68), int(size * 0.42))
+    wifi, target_h = wifi_layer(
+        size, LIGHT, int(size * 0.38), int(size * 0.52), int(size * 0.22), max(2, size // 40)
+    )
+    img.alpha_composite(wifi)
+    _l, t, _r, b = content_bbox(wifi)
+    mid_y = (t + b) / 2
+    bt = bluetooth_fitted(target_h, color="#EBEBEE", stroke=3.2)
+    paste_center(img, bt, int(size * 0.70), int(mid_y))
     rgb = Image.new("RGB", (size, size), INK[:3])
     rgb.paste(img, mask=img.split()[-1])
     return rgb

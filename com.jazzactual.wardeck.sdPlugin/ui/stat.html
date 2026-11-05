@@ -10,6 +10,7 @@
 			<sdpi-select setting="platform" default="wigle">
 				<option value="wigle">WiGLE</option>
 				<option value="wdgwars">WDGWars</option>
+				<option value="wardrift">Wardrift</option>
 			</sdpi-select>
 		</sdpi-item>
 
@@ -29,6 +30,20 @@
 				<option value="wifi">WiFi</option>
 				<option value="ble">BLE</option>
 				<option value="gang">Gang</option>
+			</sdpi-select>
+		</sdpi-item>
+
+		<sdpi-item label="Wardrift Metric">
+			<sdpi-select setting="wardriftMetric" default="networks">
+				<option value="networks">Networks</option>
+				<option value="routes">Routes</option>
+				<option value="threats">Threats</option>
+				<option value="streak">Streak</option>
+				<option value="level">Level</option>
+				<option value="currency">Coin</option>
+				<option value="expToNext">To next</option>
+				<option value="name">Name</option>
+				<option value="faction">Faction</option>
 			</sdpi-select>
 		</sdpi-item>
 
@@ -52,6 +67,24 @@
 				<sdpi-button id="test-wdgwars">Test WDGWars</sdpi-button>
 			</sdpi-item>
 
+			<sdpi-item label="Wardrift Username">
+				<sdpi-textfield
+					global
+					setting="wardriftUsername"
+					placeholder="username"
+				></sdpi-textfield>
+			</sdpi-item>
+			<sdpi-item label="Wardrift Password">
+				<sdpi-password
+					global
+					setting="wardriftPassword"
+					placeholder="password"
+				></sdpi-password>
+			</sdpi-item>
+			<sdpi-item label="">
+				<sdpi-button id="test-wardrift">Test Wardrift</sdpi-button>
+			</sdpi-item>
+
 			<p id="test-status" style="margin: 8px 12px; font-size: 12px; opacity: 0.85"></p>
 		</details>
 
@@ -73,6 +106,15 @@
 					default="5"
 					value-type="number"
 					placeholder="5"
+				></sdpi-textfield>
+			</sdpi-item>
+			<sdpi-item label="Wardrift (min)">
+				<sdpi-textfield
+					global
+					setting="wardriftPollMinutes"
+					default="15"
+					value-type="number"
+					placeholder="15"
 				></sdpi-textfield>
 			</sdpi-item>
 		</details>
@@ -106,6 +148,14 @@
 				streamDeckClient.send("sendToPlugin", {
 					event: "testConnection",
 					platform: "wdgwars"
+				});
+			});
+
+			document.getElementById("test-wardrift").addEventListener("click", () => {
+				setStatus(true, "Testing Wardrift…");
+				streamDeckClient.send("sendToPlugin", {
+					event: "testConnection",
+					platform: "wardrift"
 				});
 			});
 		</script>

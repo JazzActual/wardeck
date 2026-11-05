@@ -1,14 +1,14 @@
 {
 	"$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
 	"Name": "Wardeck",
-	"Version": "0.1.0.0",
+	"Version": "0.2.0.0",
 	"Author": "JazzActual",
 	"Actions": [
 		{
 			"Name": "Stat",
 			"UUID": "com.jazzactual.wardeck.stat",
 			"Icon": "imgs/actions/stat/icon",
-			"Tooltip": "Shows a configurable WiGLE or WDGWars statistic.",
+			"Tooltip": "Shows a configurable WiGLE, WDGWars, or Wardrift statistic.",
 			"PropertyInspectorPath": "ui/stat.html",
 			"Controllers": ["Keypad"],
 			"States": [
@@ -38,7 +38,7 @@
 			"Name": "Refresh",
 			"UUID": "com.jazzactual.wardeck.refresh",
 			"Icon": "imgs/actions/refresh/icon",
-			"Tooltip": "Force-refresh WiGLE and/or WDGWars stats.",
+			"Tooltip": "Force-refresh WiGLE, WDGWars, and/or Wardrift stats.",
 			"PropertyInspectorPath": "ui/refresh.html",
 			"Controllers": ["Keypad"],
 			"States": [
@@ -54,7 +54,7 @@
 	"Category": "Wardeck",
 	"CategoryIcon": "imgs/plugin/category-icon",
 	"CodePath": "bin/plugin.js",
-	"Description": "Live wardriving statistics from WiGLE and WDGWars on your Stream Deck.",
+	"Description": "Live wardriving statistics from WiGLE, WDGWars, and Wardrift on your Stream Deck.",
 	"Icon": "imgs/plugin/marketplace",
 	"SDKVersion": 3,
 	"Software": {

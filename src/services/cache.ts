@@ -2,11 +2,16 @@ import streamDeck from "@elgato/streamdeck";
 
 import type { GlobalSettings, Platform } from "../settings.js";
 import {
-	hasWdgwarsCredentials,
-	hasWigleCredentials,
+	ALL_PLATFORMS,
+	hasPlatformCredentials,
 	parseGlobalSettings
 } from "../settings.js";
 import { fetchWdgwarsMe, type WdgwarsMe } from "./wdgwars.js";
+import {
+	clearWardriftMemorySession,
+	fetchWardriftDashboard,
+	type WardriftDashboard
+} from "./wardrift.js";
 import { fetchWigleUserStats, type WigleUserStats } from "./wigle.js";
 
 export type CacheEntry<T> = {
@@ -31,13 +36,17 @@ const JITTER_RATIO = 0.2;
 class StatsCache {
 	wigle: CacheEntry<WigleUserStats> = emptyEntry();
 	wdgwars: CacheEntry<WdgwarsMe> = emptyEntry();
+	wardrift: CacheEntry<WardriftDashboard> = emptyEntry();
 
 	private listeners = new Set<() => void>();
 	private state: Record<Platform, PlatformState> = {
 		wigle: idleState(),
-		wdgwars: idleState()
+		wdgwars: idleState(),
+		wardrift: idleState()
 	};
 	private started = false;
+	/** Fingerprint of credential + poll settings (excludes Wardrift session token). */
+	private settingsFingerprint = "";
 
 	onUpdate(listener: () => void): () => void {
 		this.listeners.add(listener);
@@ -59,22 +68,28 @@ class StatsCache {
 			return;
 		}
 		this.started = true;
-		await this.refreshFromGlobalSettings();
+		await this.refreshFromGlobalSettings(true);
 		streamDeck.settings.onDidReceiveGlobalSettings(() => {
-			void this.refreshFromGlobalSettings();
+			void this.refreshFromGlobalSettings(false);
 		});
 	}
 
-	async refreshFromGlobalSettings(): Promise<void> {
+	async refreshFromGlobalSettings(force = false): Promise<void> {
 		const settings = parseGlobalSettings(await streamDeck.settings.getGlobalSettings());
-		this.schedule("wigle", settings, true);
-		this.schedule("wdgwars", settings, true);
+		const fingerprint = credentialFingerprint(settings);
+		if (!force && fingerprint === this.settingsFingerprint) {
+			// Session-token persistence must not cascade into a full re-poll.
+			return;
+		}
+		this.settingsFingerprint = fingerprint;
+		for (const platform of ALL_PLATFORMS) {
+			this.schedule(platform, settings, true);
+		}
 	}
 
 	async refresh(platform: Platform | "all", force = true): Promise<void> {
 		const settings = parseGlobalSettings(await streamDeck.settings.getGlobalSettings());
-		const targets: Platform[] =
-			platform === "all" ? ["wigle", "wdgwars"] : [platform];
+		const targets: Platform[] = platform === "all" ? [...ALL_PLATFORMS] : [platform];
 
 		await Promise.all(targets.map((p) => this.poll(p, settings, force)));
 	}
@@ -87,6 +102,10 @@ class StatsCache {
 		return this.wdgwars;
 	}
 
+	getWardrift(): CacheEntry<WardriftDashboard> {
+		return this.wardrift;
+	}
+
 	private schedule(platform: Platform, settings: GlobalSettings, immediate: boolean): void {
 		const st = this.state[platform];
 		if (st.timer) {
@@ -94,15 +113,10 @@ class StatsCache {
 			st.timer = null;
 		}
 
-		const configured =
-			platform === "wigle" ? hasWigleCredentials(settings) : hasWdgwarsCredentials(settings);
+		const configured = hasPlatformCredentials(platform, settings);
 
 		if (!configured) {
-			if (platform === "wigle") {
-				this.wigle = emptyEntry(false);
-			} else {
-				this.wdgwars = emptyEntry(false);
-			}
+			this.clearPlatform(platform);
 			this.notify();
 			return;
 		}
@@ -133,9 +147,27 @@ class StatsCache {
 	}
 
 	private pollIntervalMs(platform: Platform, settings: GlobalSettings): number {
-		const minutes =
-			platform === "wigle" ? settings.wiglePollMinutes : settings.wdgwarsPollMinutes;
-		return Math.max(1, minutes) * 60_000;
+		switch (platform) {
+			case "wigle":
+				return Math.max(1, settings.wiglePollMinutes) * 60_000;
+			case "wdgwars":
+				return Math.max(1, settings.wdgwarsPollMinutes) * 60_000;
+			case "wardrift":
+				return Math.max(1, settings.wardriftPollMinutes) * 60_000;
+			default:
+				return 15 * 60_000;
+		}
+	}
+
+	private clearPlatform(platform: Platform): void {
+		if (platform === "wigle") {
+			this.wigle = emptyEntry(false);
+		} else if (platform === "wdgwars") {
+			this.wdgwars = emptyEntry(false);
+		} else {
+			clearWardriftMemorySession();
+			this.wardrift = emptyEntry(false);
+		}
 	}
 
 	private async poll(platform: Platform, settings: GlobalSettings, force: boolean): Promise<void> {
@@ -147,15 +179,8 @@ class StatsCache {
 			await st.inFlight;
 		}
 
-		const configured =
-			platform === "wigle" ? hasWigleCredentials(settings) : hasWdgwarsCredentials(settings);
-
-		if (!configured) {
-			if (platform === "wigle") {
-				this.wigle = emptyEntry(false);
-			} else {
-				this.wdgwars = emptyEntry(false);
-			}
+		if (!hasPlatformCredentials(platform, settings)) {
+			this.clearPlatform(platform);
 			this.notify();
 			return;
 		}
@@ -166,49 +191,11 @@ class StatsCache {
 
 		st.inFlight = (async () => {
 			if (platform === "wigle") {
-				const result = await fetchWigleUserStats(settings);
-				if (result.ok) {
-					this.wigle = {
-						data: result.data,
-						lastSuccessAt: Date.now(),
-						lastErrorAt: null,
-						lastError: null,
-						configured: true
-					};
-					st.backoffMs = DEFAULT_BACKOFF_MS;
-					st.nextAllowedAt = 0;
-				} else {
-					this.wigle = {
-						...this.wigle,
-						configured: true,
-						lastErrorAt: Date.now(),
-						lastError: result.error
-					};
-					this.applyBackoff(st, result.retryAfterMs, result.status);
-					streamDeck.logger.warn(`WiGLE poll failed: ${result.error}`);
-				}
+				await this.pollWigle(settings, st);
+			} else if (platform === "wdgwars") {
+				await this.pollWdgwars(settings, st);
 			} else {
-				const result = await fetchWdgwarsMe(settings);
-				if (result.ok) {
-					this.wdgwars = {
-						data: result.data,
-						lastSuccessAt: Date.now(),
-						lastErrorAt: null,
-						lastError: null,
-						configured: true
-					};
-					st.backoffMs = DEFAULT_BACKOFF_MS;
-					st.nextAllowedAt = 0;
-				} else {
-					this.wdgwars = {
-						...this.wdgwars,
-						configured: true,
-						lastErrorAt: Date.now(),
-						lastError: result.error
-					};
-					this.applyBackoff(st, result.retryAfterMs, result.status);
-					streamDeck.logger.warn(`WDGWars poll failed: ${result.error}`);
-				}
+				await this.pollWardrift(settings, st);
 			}
 			this.notify();
 		})().finally(() => {
@@ -216,6 +203,79 @@ class StatsCache {
 		});
 
 		return st.inFlight;
+	}
+
+	private async pollWigle(settings: GlobalSettings, st: PlatformState): Promise<void> {
+		const result = await fetchWigleUserStats(settings);
+		if (result.ok) {
+			this.wigle = {
+				data: result.data,
+				lastSuccessAt: Date.now(),
+				lastErrorAt: null,
+				lastError: null,
+				configured: true
+			};
+			st.backoffMs = DEFAULT_BACKOFF_MS;
+			st.nextAllowedAt = 0;
+		} else {
+			this.wigle = {
+				...this.wigle,
+				configured: true,
+				lastErrorAt: Date.now(),
+				lastError: result.error
+			};
+			this.applyBackoff(st, result.retryAfterMs, result.status);
+			streamDeck.logger.warn(`WiGLE poll failed: ${result.error}`);
+		}
+	}
+
+	private async pollWdgwars(settings: GlobalSettings, st: PlatformState): Promise<void> {
+		const result = await fetchWdgwarsMe(settings);
+		if (result.ok) {
+			this.wdgwars = {
+				data: result.data,
+				lastSuccessAt: Date.now(),
+				lastErrorAt: null,
+				lastError: null,
+				configured: true
+			};
+			st.backoffMs = DEFAULT_BACKOFF_MS;
+			st.nextAllowedAt = 0;
+		} else {
+			this.wdgwars = {
+				...this.wdgwars,
+				configured: true,
+				lastErrorAt: Date.now(),
+				lastError: result.error
+			};
+			this.applyBackoff(st, result.retryAfterMs, result.status);
+			streamDeck.logger.warn(`WDGWars poll failed: ${result.error}`);
+		}
+	}
+
+	private async pollWardrift(settings: GlobalSettings, st: PlatformState): Promise<void> {
+		const result = await fetchWardriftDashboard(settings);
+		if (result.ok) {
+			this.wardrift = {
+				data: result.data,
+				lastSuccessAt: Date.now(),
+				lastErrorAt: null,
+				lastError: null,
+				configured: true
+			};
+			st.backoffMs = DEFAULT_BACKOFF_MS;
+			st.nextAllowedAt = 0;
+		} else {
+			this.wardrift = {
+				...this.wardrift,
+				configured: true,
+				lastErrorAt: Date.now(),
+				lastError: result.error
+			};
+			this.applyBackoff(st, result.retryAfterMs, result.status);
+			// Never include credentials or tokens in logs.
+			streamDeck.logger.warn(`Wardrift poll failed: ${result.error}`);
+		}
 	}
 
 	private applyBackoff(
@@ -236,6 +296,7 @@ class StatsCache {
 		}
 
 		// Auth / client errors: don't hammer; wait a poll cycle via nextAllowedAt short bump.
+		// Match CYDesk RETRY_MS ≈ 60s on Wardrift errors.
 		st.nextAllowedAt = Date.now() + Math.min(st.backoffMs, 60_000);
 	}
 }
@@ -257,6 +318,19 @@ function idleState(): PlatformState {
 		backoffMs: DEFAULT_BACKOFF_MS,
 		nextAllowedAt: 0
 	};
+}
+
+function credentialFingerprint(settings: GlobalSettings): string {
+	return [
+		settings.wigleApiName,
+		settings.wigleApiToken,
+		settings.wdgwarsApiKey,
+		settings.wardriftUsername,
+		settings.wardriftPassword,
+		settings.wiglePollMinutes,
+		settings.wdgwarsPollMinutes,
+		settings.wardriftPollMinutes
+	].join("\0");
 }
 
 /** Shared in-memory stats cache + polling scheduler. */

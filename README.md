@@ -1,8 +1,8 @@
 # Wardeck
 
-Elgato Stream Deck plugin that shows live wardriving statistics from **WiGLE** and **WDGWars**.
+Elgato Stream Deck plugin that shows live wardriving statistics from **WiGLE**, **WDGWars**, and **Wardrift**.
 
-MVP uses API-token auth only. Wardrift is deferred. This plugin is developed for **local sideload** with a temporary UUID (`com.jazzactual.wardeck`) — not yet submitted to Elgato Marketplace / Maker.
+This plugin is developed for **local sideload** with a temporary UUID (`com.jazzactual.wardeck`) — not yet submitted to Elgato Marketplace / Maker.
 
 ## Requirements
 
@@ -75,18 +75,29 @@ Secrets are stored in **global settings only** (never action settings / profiles
 | --- | --- | --- |
 | WiGLE | API Name + API Token | [wigle.net](https://wigle.net/) account → API |
 | WDGWars | `X-API-Key` (64-char hex) | [wdgwars.pl](https://wdgwars.pl/) profile after login |
+| Wardrift | Username + password | [wardrift.net](https://wardrift.net/) account |
 
-Use the **Test WiGLE** / **Test WDGWars** buttons in the Property Inspector. Without keys, keys show `—` and the plugin still runs (no crash).
+### Configure Wardrift in the Property Inspector
+
+1. Select any Wardeck key (Stat, Platform Summary, or Refresh).
+2. Under **API Credentials (global)**, enter **Wardrift Username** and **Wardrift Password**.
+3. Click **Test Wardrift** to verify sign-in + dashboard fetch.
+4. On a **Stat** key, set Platform → **Wardrift** and pick a metric (Networks, Routes, Threats, Streak, Level, Coin, To next, Name, Faction).
+5. On **Platform Summary**, set Platform → **Wardrift** (shows Networks / APs discovered).
+
+Wardrift uses session auth: the plugin signs in to `POST /v1/auth/sign-in/username`, stores the session token in global settings, and polls `GET /v1/dashboard` with `Authorization: Bearer`. On `401` it clears the token and re-signs in once (same flow as CYDesk). Password is persisted for unattended re-auth — never logged.
+
+Without credentials, keys show `—` and the plugin still runs (no crash). CI / smoke tests do not require live Wardrift credentials.
 
 ## Actions
 
 | Action | Behavior |
 | --- | --- |
-| **Stat** | Configurable platform + metric (WiGLE: WiFi GPS / WiFi / Rank / Month rank / Month events; WDGWars: Total / WiFi / BLE / Gang). Press = manual refresh for that platform. |
-| **Platform Summary** | Logo-style key with primary metric (WiGLE WiFi GPS / WDGWars Total). Press = open platform site. |
+| **Stat** | Configurable platform + metric (WiGLE / WDGWars / Wardrift). Press = manual refresh for that platform. |
+| **Platform Summary** | Logo-style key with primary metric (WiGLE WiFi GPS / WDGWars Total / Wardrift Networks). Press = open platform site. |
 | **Refresh** | Force refresh all or one platform. |
 
-Default polling: WiGLE **15 min**, WDGWars **5 min** (tunable in PI). Cache + exponential backoff on `429` / `5xx`.
+Default polling: WiGLE **15 min**, WDGWars **5 min**, Wardrift **15 min** (tunable in PI). Cache + exponential backoff on `429` / `5xx`.
 
 ## Project layout
 
@@ -95,7 +106,7 @@ com.jazzactual.wardeck.sdPlugin/   # packaged plugin (manifest, UI, imgs, built 
 src/
   plugin.ts
   actions/           # stat, platform-summary, refresh
-  services/          # cache, wigle, wdgwars
+  services/          # cache, wigle, wdgwars, wardrift
   settings.ts        # Zod schemas
   formatting.ts
 ```
@@ -108,13 +119,15 @@ src/
 | `npm run watch` | Rebuild on change and `streamdeck restart` |
 | `npm run link` | Symlink plugin into Stream Deck Plugins folder |
 | `npm run validate` | Validate plugin package via CLI |
+| `npm run smoke` | Offline schema / formatting checks (no API keys) |
 
 ## Security notes
 
-- Do **not** put API keys in action settings (they export with profiles in plaintext).
+- Do **not** put API keys or passwords in action settings (they export with profiles in plaintext).
 - Global settings are OS-backed but still readable by the local user — treat this machine as trusted.
-- Never share exported global-settings dumps. Rotate keys if exposed.
+- Never share exported global-settings dumps. Rotate keys / change passwords if exposed.
 - Dedicated per-tool keys are preferred where the platform allows rotation.
+- Wardrift character/upload API keys cannot read the dashboard — username/password session auth is required.
 
 ## License
 

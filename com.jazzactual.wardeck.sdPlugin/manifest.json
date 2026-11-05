@@ -74,5 +74,14 @@
 		"Version": "24",
 		"Debug": "enabled"
 	},
-	"UUID": "com.jazzactual.wardeck"
+	"UUID": "com.jazzactual.wardeck",
+	"Profiles": [
+		{
+			"Name": "profiles/Wardeck",
+			"DeviceType": 7,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": false,
+			"AutoInstall": true
+		}
+	]
 }

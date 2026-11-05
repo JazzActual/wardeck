@@ -2,17 +2,21 @@
 """Generate Wardeck Stream Deck icons — three minimal monochrome marks only.
 
 Marks: wifi · bluetooth · combo (wifi+bt)
+Bluetooth uses the standard ᛒ rune via SVG (cairosvg); wifi is drawn with Pillow.
 Copied into category / marketplace / action / platform paths as needed.
 
 Sizes: category 28/56, action list 20/40, key 72/144, marketplace 288/512
+
+Requires: Pillow, cairosvg
 """
 
 from __future__ import annotations
 
-import math
 import shutil
+from io import BytesIO
 from pathlib import Path
 
+import cairosvg
 from PIL import Image, ImageDraw
 
 PLUGIN = Path(__file__).resolve().parents[2] / "com.jazzactual.wardeck.sdPlugin" / "imgs"
@@ -24,6 +28,15 @@ LIGHT = (235, 235, 238, 255)
 DIM = (170, 170, 175, 255)
 WHITE = (255, 255, 255, 255)
 CLEAR = (0, 0, 0, 0)
+
+# Standard Bluetooth rune (stem + right B triangles + left X arms), pointed miter tips.
+BT_SVG = """\
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <path d="M24 4 V44 M24 4 L36 16 L24 24 L36 32 L24 44 M36 16 L12 32 M36 32 L12 16"
+        stroke="{color}" stroke-width="{stroke}" stroke-linecap="butt"
+        stroke-linejoin="miter" stroke-miterlimit="10"/>
+</svg>
+"""
 
 
 def save(img: Image.Image, path: Path) -> None:
@@ -64,21 +77,17 @@ def draw_wifi(
     draw.ellipse([cx - br, cy - br, cx + br, cy + br], fill=color)
 
 
-def draw_bluetooth(draw: ImageDraw.ImageDraw, color, cx: int, cy: int, h: int, width: int) -> None:
-    """Minimal Bluetooth rune: one polyline (stem + right tips + cross arms)."""
-    half = h // 2
-    tip_w = int(h * 0.38)
-    top = (cx, cy - half)
-    mid = (cx, cy)
-    bot = (cx, cy + half)
-    ur = (cx + tip_w, cy - half // 2)
-    lr = (cx + tip_w, cy + half // 2)
-    ul = (cx - tip_w, cy - half // 2)
-    ll = (cx - tip_w, cy + half // 2)
-    # single continuous rune path
-    draw.line([ul, lr, top, bot, ur, ll], fill=color, width=width, joint="curve")
-    # stem (ensures solid vertical through joints)
-    draw.line([top, bot], fill=color, width=width)
+def bluetooth_glyph(size: int, color: str = "#EBEBEE", stroke: float = 3.2) -> Image.Image:
+    """Rasterize the standard Bluetooth rune into a transparent RGBA square."""
+    svg = BT_SVG.format(color=color, stroke=stroke)
+    png = cairosvg.svg2png(bytestring=svg.encode(), output_width=size, output_height=size)
+    return Image.open(BytesIO(png)).convert("RGBA")
+
+
+def paste_center(base: Image.Image, glyph: Image.Image, cx: int, cy: int) -> None:
+    x = int(cx - glyph.width / 2)
+    y = int(cy - glyph.height / 2)
+    base.alpha_composite(glyph, (x, y))
 
 
 def make_mono_wifi(size: int) -> Image.Image:
@@ -89,19 +98,23 @@ def make_mono_wifi(size: int) -> Image.Image:
 
 
 def make_mono_bluetooth(size: int) -> Image.Image:
-    def paint(draw, s):
-        draw_bluetooth(draw, WHITE, s // 2, s // 2, int(s * 0.62), max(2, s // 12))
-
-    return supersample(paint, size)
+    # Slightly inset so stroke isn't clipped; white on transparent
+    g = bluetooth_glyph(max(size - 2, 8), color="#FFFFFF", stroke=3.6)
+    g = g.resize((size, size), Image.Resampling.LANCZOS)
+    return g
 
 
 def make_mono_combo(size: int) -> Image.Image:
-    def paint(draw, s):
-        # wifi left-of-center, compact BT right
-        draw_wifi(draw, WHITE, int(s * 0.38), int(s * 0.62), int(s * 0.32), max(2, s // 16))
-        draw_bluetooth(draw, WHITE, int(s * 0.72), int(s * 0.48), int(s * 0.42), max(2, s // 14))
-
-    return supersample(paint, size)
+    img = Image.new("RGBA", (size, size), CLEAR)
+    # wifi via supersampled draw into temp
+    wifi = supersample(
+        lambda d, s: draw_wifi(d, WHITE, int(s * 0.38), int(s * 0.62), int(s * 0.30), max(2, s // 16)),
+        size,
+    )
+    img.alpha_composite(wifi)
+    bt = bluetooth_glyph(max(int(size * 0.55), 8), color="#FFFFFF", stroke=3.4)
+    paste_center(img, bt, int(size * 0.72), int(size * 0.48))
+    return img
 
 
 def make_key_wifi(size: int) -> Image.Image:
@@ -113,34 +126,47 @@ def make_key_wifi(size: int) -> Image.Image:
 
 
 def make_key_bluetooth(size: int) -> Image.Image:
-    def paint(draw, s):
-        key_field(draw, s)
-        draw_bluetooth(draw, LIGHT, s // 2, int(s * 0.26), int(s * 0.28), lw(s, 2.2))
-
-    return supersample(paint, size)
+    img = Image.new("RGBA", (size, size), CLEAR)
+    draw = ImageDraw.Draw(img)
+    key_field(draw, size)
+    # Glyph sized for upper title-safe zone — bold standard rune
+    gsize = int(size * 0.50)
+    bt = bluetooth_glyph(gsize, color="#EBEBEE", stroke=3.6)
+    paste_center(img, bt, size // 2, int(size * 0.28))
+    return img
 
 
 def make_key_combo(size: int) -> Image.Image:
-    def paint(draw, s):
-        key_field(draw, s)
-        draw_wifi(draw, LIGHT, int(s * 0.36), int(s * 0.34), int(s * 0.18), lw(s, 1.8))
-        draw_bluetooth(draw, LIGHT, int(s * 0.70), int(s * 0.26), int(s * 0.22), lw(s, 2.0))
-
-    return supersample(paint, size)
+    img = Image.new("RGBA", (size, size), CLEAR)
+    draw = ImageDraw.Draw(img)
+    key_field(draw, size)
+    # wifi left
+    tmp = Image.new("RGBA", (size, size), CLEAR)
+    td = ImageDraw.Draw(tmp)
+    draw_wifi(td, LIGHT, int(size * 0.32), int(size * 0.34), int(size * 0.16), lw(size, 1.8))
+    img.alpha_composite(tmp)
+    # same standard BT rune as standalone mark
+    gsize = int(size * 0.36)
+    bt = bluetooth_glyph(gsize, color="#EBEBEE", stroke=3.6)
+    paste_center(img, bt, int(size * 0.72), int(size * 0.28))
+    return img
 
 
 def make_marketplace(size: int) -> Image.Image:
-    def paint(draw, s):
-        draw.rectangle([0, 0, s, s], fill=INK)
-        m = int(s * 0.10)
-        draw.rectangle([m, m, s - m, s - m], outline=DIM, width=max(2, s // 64))
-        # combo centered
-        draw_wifi(draw, LIGHT, int(s * 0.40), int(s * 0.55), int(s * 0.26), max(2, s // 36))
-        draw_bluetooth(draw, LIGHT, int(s * 0.68), int(s * 0.42), int(s * 0.28), max(2, s // 32))
-
-    rgba = supersample(paint, size)
+    img = Image.new("RGBA", (size, size), CLEAR)
+    draw = ImageDraw.Draw(img)
+    draw.rectangle([0, 0, size, size], fill=INK)
+    m = int(size * 0.10)
+    draw.rectangle([m, m, size - m, size - m], outline=DIM, width=max(2, size // 64))
+    tmp = Image.new("RGBA", (size, size), CLEAR)
+    td = ImageDraw.Draw(tmp)
+    draw_wifi(td, LIGHT, int(size * 0.38), int(size * 0.52), int(size * 0.22), max(2, size // 40))
+    img.alpha_composite(tmp)
+    gsize = int(size * 0.28)
+    bt = bluetooth_glyph(gsize, color="#EBEBEE", stroke=3.2)
+    paste_center(img, bt, int(size * 0.68), int(size * 0.42))
     rgb = Image.new("RGB", (size, size), INK[:3])
-    rgb.paste(rgba, mask=rgba.split()[-1])
+    rgb.paste(img, mask=img.split()[-1])
     return rgb
 
 
@@ -159,7 +185,6 @@ def copy_pair(src_base: Path, dst_base: Path) -> None:
 
 
 def main() -> None:
-    # Canonical three marks
     write_pair(make_mono_wifi, MARKS / "wifi" / "icon", (20, 40))
     write_pair(make_mono_bluetooth, MARKS / "bluetooth" / "icon", (20, 40))
     write_pair(make_mono_combo, MARKS / "combo" / "icon", (20, 40))
@@ -167,12 +192,10 @@ def main() -> None:
     write_pair(make_key_bluetooth, MARKS / "bluetooth" / "key", (72, 144))
     write_pair(make_key_combo, MARKS / "combo" / "key", (72, 144))
 
-    # Category = wifi mono at category sizes
     write_pair(make_mono_wifi, PLUGIN / "plugin" / "category-icon", (28, 56))
     save(make_marketplace(288), PLUGIN / "plugin" / "marketplace.png")
     save(make_marketplace(512), PLUGIN / "plugin" / "marketplace@2x.png")
 
-    # Action defaults: stat=wifi, summary=combo, refresh=combo
     copy_pair(MARKS / "wifi" / "icon", PLUGIN / "actions" / "stat" / "icon")
     copy_pair(MARKS / "wifi" / "key", PLUGIN / "actions" / "stat" / "key")
     copy_pair(MARKS / "combo" / "icon", PLUGIN / "actions" / "platform-summary" / "icon")
@@ -180,12 +203,10 @@ def main() -> None:
     copy_pair(MARKS / "combo" / "icon", PLUGIN / "actions" / "refresh" / "icon")
     copy_pair(MARKS / "combo" / "key", PLUGIN / "actions" / "refresh" / "key")
 
-    # Platform runtime keys (reuse marks only)
     copy_pair(MARKS / "wifi" / "key", PLUGIN / "platforms" / "wigle" / "key")
     copy_pair(MARKS / "combo" / "key", PLUGIN / "platforms" / "wdgwars" / "key")
     copy_pair(MARKS / "wifi" / "key", PLUGIN / "platforms" / "wardrift" / "key")
     copy_pair(MARKS / "combo" / "key", PLUGIN / "platforms" / "all" / "key")
-    # BLE-specific path for stat metric
     copy_pair(MARKS / "bluetooth" / "key", PLUGIN / "platforms" / "bluetooth" / "key")
 
 

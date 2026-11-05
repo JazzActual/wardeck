@@ -109,7 +109,7 @@ Only **three** minimal monochrome marks, reused everywhere:
 | `imgs/marks/bluetooth` | Bluetooth |
 | `imgs/marks/combo` | Wi‑Fi + Bluetooth |
 
-White/light on near-black keys; white-on-transparent list glyphs. Category uses wifi; marketplace / summary / refresh default to combo; Stat uses wifi (bluetooth when the metric is BLE). Regenerate with `npm run icons` (requires Pillow).
+White/light on near-black keys; white-on-transparent list glyphs. Bluetooth is the standard ᛒ rune (pointed geometric B). Category uses wifi; marketplace / summary / refresh default to combo; Stat uses wifi (bluetooth when the metric is BLE). Regenerate with `npm run icons` (requires Pillow + cairosvg).
 
 ## Project layout
 

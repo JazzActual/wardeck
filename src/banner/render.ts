@@ -3,6 +3,8 @@
  * Stream Deck+ has no native full-strip canvas — one logical SVG, four viewBox crops.
  */
 
+import { formatCompactNumber } from "../formatting.js";
+
 export const BANNER_WIDTH = 800;
 export const BANNER_HEIGHT = 100;
 export const SLICE_WIDTH = 200;
@@ -47,12 +49,9 @@ const HEADER_H = 28;
 const FONT =
 	"system-ui, -apple-system, Segoe UI, sans-serif";
 
-/** Integer with thousands separators; 0 stays "0"; nullish → "—". */
+/** Same compact format as keypad Stat titles (e.g. 48.3k, 1.2k); 0 stays "0". */
 export function formatBannerNumber(value: BannerMetricValue): string {
-	if (value === null || value === undefined || Number.isNaN(value)) {
-		return "—";
-	}
-	return Math.round(value).toLocaleString("en-US");
+	return formatCompactNumber(value);
 }
 
 export function buildIdentityLine(

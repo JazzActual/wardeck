@@ -249,15 +249,10 @@ for (const action of manifest.Actions) {
 	);
 }
 
-function formatBannerNumber(value) {
-	if (value === null || value === undefined || Number.isNaN(value)) {
-		return "—";
-	}
-	return Math.round(value).toLocaleString("en-US");
-}
-assert.equal(formatBannerNumber(0), "0");
-assert.equal(formatBannerNumber(1284), "1,284");
-assert.equal(formatBannerNumber(null), "—");
+// Banner metrics must match keypad compact format (not full commas).
+assert.equal(formatCompactNumber(0), "0");
+assert.equal(formatCompactNumber(1284), "1.3k");
+assert.equal(formatCompactNumber(48291), "48.3k");
 
 // Sample A label contract: MONTHLY spelled out (never MO).
 assert.equal("MONTHLY RANK".includes("MO "), false);

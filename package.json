@@ -9,7 +9,8 @@
 		"link": "streamdeck link com.jazzactual.wardeck.sdPlugin",
 		"validate": "streamdeck validate com.jazzactual.wardeck.sdPlugin",
 		"smoke": "node scripts/smoke.mjs",
-		"icons": "python3 scripts/icons/generate_icons.py"
+		"icons": "python3 scripts/icons/generate_icons.py",
+		"profile:plus": "node scripts/generate-plus-profile.mjs"
 	},
 	"engines": {
 		"node": ">=24"

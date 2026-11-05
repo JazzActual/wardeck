@@ -1,28 +1,41 @@
-import type { Platform } from "./settings.js";
+import type { Platform, StatActionSettings } from "./settings.js";
 
-/** Manifest / setImage paths are relative to the plugin root, without extension. */
-export const ACTION_DEFAULT_KEYS = {
-	stat: "imgs/actions/stat/key",
-	platformSummary: "imgs/actions/platform-summary/key",
-	refresh: "imgs/actions/refresh/key"
-} as const;
+/** Only three marks — wifi / bluetooth / combo — reused everywhere. */
+export type IconMark = "wifi" | "bluetooth" | "combo";
 
-/** Per-platform key art (144px @2x preferred when set programmatically). */
-const PLATFORM_KEYS: Record<Platform, string> = {
-	wigle: "imgs/platforms/wigle/key",
-	wdgwars: "imgs/platforms/wdgwars/key",
-	wardrift: "imgs/platforms/wardrift/key"
+const MARK_KEYS: Record<IconMark, string> = {
+	wifi: "imgs/marks/wifi/key",
+	bluetooth: "imgs/marks/bluetooth/key",
+	combo: "imgs/marks/combo/key"
 };
 
-const ALL_PLATFORMS_KEY = "imgs/platforms/all/key";
+export function markKeyImage(mark: IconMark): string {
+	return MARK_KEYS[mark];
+}
 
+/** Platform summary / default platform tile. */
 export function platformKeyImage(platform: Platform): string {
-	return PLATFORM_KEYS[platform];
+	switch (platform) {
+		case "wdgwars":
+			return MARK_KEYS.combo;
+		case "wigle":
+		case "wardrift":
+		default:
+			return MARK_KEYS.wifi;
+	}
+}
+
+/** Stat key: BLE metrics → bluetooth; otherwise wifi (WDGWars total stays wifi). */
+export function statKeyImage(settings: StatActionSettings): string {
+	if (settings.platform === "wdgwars" && settings.wdgwarsMetric === "ble") {
+		return MARK_KEYS.bluetooth;
+	}
+	return MARK_KEYS.wifi;
 }
 
 export function refreshKeyImage(platform: Platform | "all"): string {
-	if (platform === "all") {
-		return ALL_PLATFORMS_KEY;
+	if (platform === "all" || platform === "wdgwars") {
+		return MARK_KEYS.combo;
 	}
-	return PLATFORM_KEYS[platform];
+	return MARK_KEYS.wifi;
 }

@@ -101,17 +101,15 @@ Default polling: WiGLE **15 min**, WDGWars **5 min**, Wardrift **15 min** (tunab
 
 ## Icons
 
-Minimal **monochrome** geometric marks (white/light on near-black keys; white-on-transparent action-list glyphs). Original shapes only — no third-party logos, no color coding.
+Only **three** minimal monochrome marks, reused everywhere:
 
-| Asset | Role |
+| Mark | Meaning |
 | --- | --- |
-| `imgs/plugin/category-icon` | Action-list category (28 / 56) |
-| `imgs/plugin/marketplace` | Plugin / preferences icon (288 / 512) |
-| `imgs/actions/*/icon` | Action-list glyphs (20 / 40) |
-| `imgs/actions/*/key` | Default key tiles (72 / 144) |
-| `imgs/platforms/{wigle,wdgwars,wardrift,all}/key` | Platform tiles selected at runtime |
+| `imgs/marks/wifi` | Wi‑Fi |
+| `imgs/marks/bluetooth` | Bluetooth |
+| `imgs/marks/combo` | Wi‑Fi + Bluetooth |
 
-Platform distinction is by **shape + stroke weight** (WiGLE thin radar arcs, WDGWars heavy shield, Wardrift medium route nodes, Refresh arrows). Regenerate with `npm run icons` (requires Pillow).
+White/light on near-black keys; white-on-transparent list glyphs. Category uses wifi; marketplace / summary / refresh default to combo; Stat uses wifi (bluetooth when the metric is BLE). Regenerate with `npm run icons` (requires Pillow).
 
 ## Project layout
 

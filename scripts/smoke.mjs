@@ -156,6 +156,18 @@ assert.equal(
 
 const pluginRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "com.jazzactual.wardeck.sdPlugin");
 const requiredIcons = [
+	"imgs/marks/wifi/icon.png",
+	"imgs/marks/wifi/icon@2x.png",
+	"imgs/marks/wifi/key.png",
+	"imgs/marks/wifi/key@2x.png",
+	"imgs/marks/bluetooth/icon.png",
+	"imgs/marks/bluetooth/icon@2x.png",
+	"imgs/marks/bluetooth/key.png",
+	"imgs/marks/bluetooth/key@2x.png",
+	"imgs/marks/combo/icon.png",
+	"imgs/marks/combo/icon@2x.png",
+	"imgs/marks/combo/key.png",
+	"imgs/marks/combo/key@2x.png",
 	"imgs/plugin/category-icon.png",
 	"imgs/plugin/category-icon@2x.png",
 	"imgs/plugin/marketplace.png",
@@ -179,7 +191,9 @@ const requiredIcons = [
 	"imgs/platforms/wardrift/key.png",
 	"imgs/platforms/wardrift/key@2x.png",
 	"imgs/platforms/all/key.png",
-	"imgs/platforms/all/key@2x.png"
+	"imgs/platforms/all/key@2x.png",
+	"imgs/platforms/bluetooth/key.png",
+	"imgs/platforms/bluetooth/key@2x.png"
 ];
 
 for (const rel of requiredIcons) {

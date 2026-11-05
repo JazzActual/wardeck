@@ -42,6 +42,49 @@ npm run watch
 
 After linking, open Stream Deck → add Wardeck actions from the category list → configure credentials in the Property Inspector.
 
+## Bundled Stream Deck+ profile
+
+The plugin ships a pre-laid **Wardeck** profile for **Stream Deck+** (8 LCD keys + dials). It is registered in the plugin manifest (`DeviceType` 7, `AutoInstall: true`) and contains **no credentials** — paste WiGLE / WDGWars / Wardrift secrets in the Property Inspector after install.
+
+### Default layout
+
+**Page 1 — WiGLE + WDGWars**
+
+| WiGLE (summary) | WiFi GPS | Rank | Refresh (all) |
+| --- | --- | --- | --- |
+| WDGWars (summary) | Total | WiFi | Next page → |
+
+**Page 2 — Wardrift (+ WDGWars BLE)**
+
+| ← Previous | Wardrift (summary) | Networks | Routes |
+| --- | --- | --- | --- |
+| WDGWars BLE | Streak | *(free)* | *(free)* |
+
+Dials / touch strip are left unbound (Wardeck actions are Keypad-only; dial support is a later phase). Key art uses the custom Wardeck platform tiles from `imgs/platforms/`.
+
+### Install / import
+
+**A. Via plugin install (recommended after sideload)**
+
+1. Build and link the plugin (`npm run build` → `npm run link` → `streamdeck restart com.jazzactual.wardeck`).
+2. When Stream Deck first loads the plugin, accept the prompt to install the bundled **Wardeck** profile (or it appears under Profiles for Stream Deck+).
+3. Select the **Stream Deck+** device and switch to the **Wardeck** profile.
+4. Click any Wardeck key → Property Inspector → fill **global** credentials (WiGLE API Name/Token, WDGWars API key, and/or Wardrift username/password). Test each platform. Keys show `—` until credentials work.
+
+**B. Manual double-click import**
+
+1. Ensure the plugin is already linked/loaded (actions must resolve by UUID).
+2. Open `com.jazzactual.wardeck.sdPlugin/profiles/Wardeck.streamDeckProfile` (double-click, or drag onto Stream Deck).
+3. Confirm import for Stream Deck+, then configure credentials as above.
+
+**C. Rebuild the profile archive (maintainers)**
+
+```bash
+npm run profile:plus
+```
+
+This regenerates `com.jazzactual.wardeck.sdPlugin/profiles/Wardeck.streamDeckProfile` from `scripts/generate-plus-profile.mjs`.
+
 ### Manual symlink (if `streamdeck link` is unavailable)
 
 **macOS**
@@ -116,7 +159,8 @@ Stat / Platform Summary / Refresh call `setImage` for the active platform (teal 
 ## Project layout
 
 ```
-com.jazzactual.wardeck.sdPlugin/   # packaged plugin (manifest, UI, imgs, built bin/)
+com.jazzactual.wardeck.sdPlugin/   # packaged plugin (manifest, UI, imgs, profiles, built bin/)
+  profiles/Wardeck.streamDeckProfile   # Stream Deck+ default layout
 src/
   plugin.ts
   actions/           # stat, platform-summary, refresh
@@ -124,7 +168,10 @@ src/
   settings.ts        # Zod schemas
   icons.ts           # key image paths
   formatting.ts
-scripts/icons/       # PNG generator
+scripts/
+  icons/             # PNG generator
+  generate-plus-profile.mjs
+  smoke.mjs
 ```
 
 ## Scripts
@@ -137,6 +184,7 @@ scripts/icons/       # PNG generator
 | `npm run validate` | Validate plugin package via CLI |
 | `npm run smoke` | Offline schema / formatting / icon checks (no API keys) |
 | `npm run icons` | Regenerate PNG icons via `scripts/icons/generate_icons.py` |
+| `npm run profile:plus` | Regenerate the Stream Deck+ `.streamDeckProfile` |
 
 ## Security notes
 

@@ -1,0 +1,78 @@
+{
+	"$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+	"Name": "Wardeck",
+	"Version": "0.1.0.0",
+	"Author": "JazzActual",
+	"Actions": [
+		{
+			"Name": "Stat",
+			"UUID": "com.jazzactual.wardeck.stat",
+			"Icon": "imgs/actions/stat/icon",
+			"Tooltip": "Shows a configurable WiGLE or WDGWars statistic.",
+			"PropertyInspectorPath": "ui/stat.html",
+			"Controllers": ["Keypad"],
+			"States": [
+				{
+					"Image": "imgs/actions/stat/key",
+					"TitleAlignment": "middle",
+					"FontSize": 14
+				}
+			]
+		},
+		{
+			"Name": "Platform Summary",
+			"UUID": "com.jazzactual.wardeck.platform-summary",
+			"Icon": "imgs/actions/platform-summary/icon",
+			"Tooltip": "Shows a platform logo and primary metric; opens the platform site on press.",
+			"PropertyInspectorPath": "ui/platform-summary.html",
+			"Controllers": ["Keypad"],
+			"States": [
+				{
+					"Image": "imgs/actions/platform-summary/key",
+					"TitleAlignment": "middle",
+					"FontSize": 12
+				}
+			]
+		},
+		{
+			"Name": "Refresh",
+			"UUID": "com.jazzactual.wardeck.refresh",
+			"Icon": "imgs/actions/refresh/icon",
+			"Tooltip": "Force-refresh WiGLE and/or WDGWars stats.",
+			"PropertyInspectorPath": "ui/refresh.html",
+			"Controllers": ["Keypad"],
+			"States": [
+				{
+					"Image": "imgs/actions/refresh/key",
+					"TitleAlignment": "middle",
+					"FontSize": 12,
+					"Title": "Refresh"
+				}
+			]
+		}
+	],
+	"Category": "Wardeck",
+	"CategoryIcon": "imgs/plugin/category-icon",
+	"CodePath": "bin/plugin.js",
+	"Description": "Live wardriving statistics from WiGLE and WDGWars on your Stream Deck.",
+	"Icon": "imgs/plugin/marketplace",
+	"SDKVersion": 3,
+	"Software": {
+		"MinimumVersion": "7.1"
+	},
+	"OS": [
+		{
+			"Platform": "mac",
+			"MinimumVersion": "12"
+		},
+		{
+			"Platform": "windows",
+			"MinimumVersion": "10"
+		}
+	],
+	"Nodejs": {
+		"Version": "24",
+		"Debug": "enabled"
+	},
+	"UUID": "com.jazzactual.wardeck"
+}

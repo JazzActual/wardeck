@@ -1,0 +1,92 @@
+<!doctype html>
+<html>
+	<head lang="en">
+		<title>Wardeck Refresh</title>
+		<meta charset="utf-8" />
+		<script src="sdpi-components.js"></script>
+	</head>
+	<body>
+		<sdpi-item label="Refresh">
+			<sdpi-select setting="platform" default="all">
+				<option value="all">All platforms</option>
+				<option value="wigle">WiGLE only</option>
+				<option value="wdgwars">WDGWars only</option>
+			</sdpi-select>
+		</sdpi-item>
+
+		<details open>
+			<summary>API Credentials (global)</summary>
+			<sdpi-item label="WiGLE API Name">
+				<sdpi-textfield global setting="wigleApiName" placeholder="API Name"></sdpi-textfield>
+			</sdpi-item>
+			<sdpi-item label="WiGLE API Token">
+				<sdpi-password global setting="wigleApiToken" placeholder="API Token"></sdpi-password>
+			</sdpi-item>
+			<sdpi-item label="">
+				<sdpi-button id="test-wigle">Test WiGLE</sdpi-button>
+			</sdpi-item>
+			<sdpi-item label="WDGWars API Key">
+				<sdpi-password global setting="wdgwarsApiKey" placeholder="X-API-Key"></sdpi-password>
+			</sdpi-item>
+			<sdpi-item label="">
+				<sdpi-button id="test-wdgwars">Test WDGWars</sdpi-button>
+			</sdpi-item>
+			<p id="test-status" style="margin: 8px 12px; font-size: 12px; opacity: 0.85"></p>
+		</details>
+
+		<details>
+			<summary>Polling (global)</summary>
+			<sdpi-item label="WiGLE (min)">
+				<sdpi-textfield
+					global
+					setting="wiglePollMinutes"
+					default="15"
+					value-type="number"
+					placeholder="15"
+				></sdpi-textfield>
+			</sdpi-item>
+			<sdpi-item label="WDGWars (min)">
+				<sdpi-textfield
+					global
+					setting="wdgwarsPollMinutes"
+					default="5"
+					value-type="number"
+					placeholder="5"
+				></sdpi-textfield>
+			</sdpi-item>
+		</details>
+
+		<script>
+			const { streamDeckClient } = SDPIComponents;
+			const statusEl = document.getElementById("test-status");
+
+			function setStatus(ok, message) {
+				statusEl.textContent = message;
+				statusEl.style.color = ok ? "#6f6" : "#f66";
+			}
+
+			streamDeckClient.sendToPropertyInspector.subscribe((ev) => {
+				const payload = ev?.payload ?? ev;
+				if (payload?.event === "testConnectionResult") {
+					setStatus(Boolean(payload.ok), payload.message ?? "");
+				}
+			});
+
+			document.getElementById("test-wigle").addEventListener("click", () => {
+				setStatus(true, "Testing WiGLE…");
+				streamDeckClient.send("sendToPlugin", {
+					event: "testConnection",
+					platform: "wigle"
+				});
+			});
+
+			document.getElementById("test-wdgwars").addEventListener("click", () => {
+				setStatus(true, "Testing WDGWars…");
+				streamDeckClient.send("sendToPlugin", {
+					event: "testConnection",
+					platform: "wdgwars"
+				});
+			});
+		</script>
+	</body>
+</html>

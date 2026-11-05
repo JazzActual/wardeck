@@ -2,6 +2,9 @@
  * Lightweight smoke checks that do not require Stream Deck or API keys.
  */
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { z } from "zod";
 
 function formatCompactNumber(value) {
@@ -150,5 +153,65 @@ assert.equal(
 	hasWardriftCredentials({ wardriftUsername: "scout", wardriftPassword: "x" }),
 	true
 );
+
+const pluginRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "com.jazzactual.wardeck.sdPlugin");
+const requiredIcons = [
+	"imgs/marks/wifi/icon.png",
+	"imgs/marks/wifi/icon@2x.png",
+	"imgs/marks/wifi/key.png",
+	"imgs/marks/wifi/key@2x.png",
+	"imgs/marks/bluetooth/icon.png",
+	"imgs/marks/bluetooth/icon@2x.png",
+	"imgs/marks/bluetooth/key.png",
+	"imgs/marks/bluetooth/key@2x.png",
+	"imgs/marks/combo/icon.png",
+	"imgs/marks/combo/icon@2x.png",
+	"imgs/marks/combo/key.png",
+	"imgs/marks/combo/key@2x.png",
+	"imgs/plugin/category-icon.png",
+	"imgs/plugin/category-icon@2x.png",
+	"imgs/plugin/marketplace.png",
+	"imgs/plugin/marketplace@2x.png",
+	"imgs/actions/stat/icon.png",
+	"imgs/actions/stat/icon@2x.png",
+	"imgs/actions/stat/key.png",
+	"imgs/actions/stat/key@2x.png",
+	"imgs/actions/platform-summary/icon.png",
+	"imgs/actions/platform-summary/icon@2x.png",
+	"imgs/actions/platform-summary/key.png",
+	"imgs/actions/platform-summary/key@2x.png",
+	"imgs/actions/refresh/icon.png",
+	"imgs/actions/refresh/icon@2x.png",
+	"imgs/actions/refresh/key.png",
+	"imgs/actions/refresh/key@2x.png",
+	"imgs/platforms/wigle/key.png",
+	"imgs/platforms/wigle/key@2x.png",
+	"imgs/platforms/wdgwars/key.png",
+	"imgs/platforms/wdgwars/key@2x.png",
+	"imgs/platforms/wardrift/key.png",
+	"imgs/platforms/wardrift/key@2x.png",
+	"imgs/platforms/all/key.png",
+	"imgs/platforms/all/key@2x.png",
+	"imgs/platforms/bluetooth/key.png",
+	"imgs/platforms/bluetooth/key@2x.png"
+];
+
+for (const rel of requiredIcons) {
+	const full = path.join(pluginRoot, rel);
+	assert.ok(fs.existsSync(full), `missing icon ${rel}`);
+}
+
+const manifest = JSON.parse(fs.readFileSync(path.join(pluginRoot, "manifest.json"), "utf8"));
+assert.equal(manifest.CategoryIcon, "imgs/plugin/category-icon");
+assert.equal(manifest.Icon, "imgs/plugin/marketplace");
+for (const action of manifest.Actions) {
+	assert.ok(action.Icon, `${action.UUID} missing Icon`);
+	assert.ok(action.States?.[0]?.Image, `${action.UUID} missing state Image`);
+	assert.ok(fs.existsSync(path.join(pluginRoot, `${action.Icon}.png`)), `${action.Icon}.png`);
+	assert.ok(
+		fs.existsSync(path.join(pluginRoot, `${action.States[0].Image}.png`)),
+		`${action.States[0].Image}.png`
+	);
+}
 
 console.log("smoke ok");

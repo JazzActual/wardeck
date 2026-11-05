@@ -99,6 +99,18 @@ Without credentials, keys show `—` and the plugin still runs (no crash). CI / 
 
 Default polling: WiGLE **15 min**, WDGWars **5 min**, Wardrift **15 min** (tunable in PI). Cache + exponential backoff on `429` / `5xx`.
 
+## Icons
+
+Only **three** minimal monochrome marks, reused everywhere:
+
+| Mark | Meaning |
+| --- | --- |
+| `imgs/marks/wifi` | Wi‑Fi |
+| `imgs/marks/bluetooth` | Bluetooth |
+| `imgs/marks/combo` | Wi‑Fi + Bluetooth |
+
+White/light on near-black keys; white-on-transparent list glyphs. Bluetooth is the standard ᛒ rune (pointed geometric B). Category uses wifi; marketplace / summary / refresh default to combo; Stat uses wifi (bluetooth when the metric is BLE). Regenerate with `npm run icons` (requires Pillow + cairosvg).
+
 ## Project layout
 
 ```
@@ -108,7 +120,9 @@ src/
   actions/           # stat, platform-summary, refresh
   services/          # cache, wigle, wdgwars, wardrift
   settings.ts        # Zod schemas
+  icons.ts           # key image paths
   formatting.ts
+scripts/icons/       # PNG generator
 ```
 
 ## Scripts
@@ -119,7 +133,8 @@ src/
 | `npm run watch` | Rebuild on change and `streamdeck restart` |
 | `npm run link` | Symlink plugin into Stream Deck Plugins folder |
 | `npm run validate` | Validate plugin package via CLI |
-| `npm run smoke` | Offline schema / formatting checks (no API keys) |
+| `npm run smoke` | Offline schema / formatting / icon checks (no API keys) |
+| `npm run icons` | Regenerate PNG icons via `scripts/icons/generate_icons.py` |
 
 ## Security notes
 

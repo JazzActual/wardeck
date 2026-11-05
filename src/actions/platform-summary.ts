@@ -7,6 +7,7 @@ import streamDeck, {
 } from "@elgato/streamdeck";
 
 import { EMPTY_TITLE, formatCompactNumber } from "../formatting.js";
+import { platformKeyImage } from "../icons.js";
 import { statsCache } from "../services/cache.js";
 import {
 	parsePlatformSummarySettings,
@@ -57,6 +58,8 @@ export class PlatformSummaryAction extends SingletonAction<PlatformSummarySettin
 		}
 
 		const settings = parsePlatformSummarySettings(rawSettings);
+		await action.setImage(platformKeyImage(settings.platform));
+
 		if (settings.platform === "wigle") {
 			const entry = statsCache.getWigle();
 			const primary = entry.data?.statistics?.discoveredWiFiGPS;

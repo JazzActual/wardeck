@@ -7,6 +7,7 @@ import {
 } from "@elgato/streamdeck";
 
 import { EMPTY_TITLE, formatCompactNumber } from "../formatting.js";
+import { platformKeyImage } from "../icons.js";
 import { statsCache } from "../services/cache.js";
 import { readWdgwarsMetric } from "../services/wdgwars.js";
 import { readWardriftMetric } from "../services/wardrift.js";
@@ -64,6 +65,7 @@ export class StatAction extends SingletonAction<StatActionSettings> {
 
 		const settings = parseStatSettings(rawSettings);
 		const { title, subtitle } = resolveStatDisplay(settings);
+		await action.setImage(platformKeyImage(settings.platform));
 		await action.setTitle(`${subtitle}\n${title}`);
 	}
 }

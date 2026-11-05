@@ -99,6 +99,20 @@ Without credentials, keys show `—` and the plugin still runs (no crash). CI / 
 
 Default polling: WiGLE **15 min**, WDGWars **5 min**, Wardrift **15 min** (tunable in PI). Cache + exponential backoff on `429` / `5xx`.
 
+## Icons
+
+Custom geometric key art (RF / wardrive vibe — original marks, no third-party logos):
+
+| Asset | Role |
+| --- | --- |
+| `imgs/plugin/category-icon` | Action-list category (28 / 56, white mono) |
+| `imgs/plugin/marketplace` | Plugin / preferences icon (288 / 512) |
+| `imgs/actions/*/icon` | Action-list glyphs (20 / 40, white mono) |
+| `imgs/actions/*/key` | Default key tiles (72 / 144) |
+| `imgs/platforms/{wigle,wdgwars,wardrift,all}/key` | Platform tiles selected at runtime |
+
+Stat / Platform Summary / Refresh call `setImage` for the active platform (teal radar, amber shield, blue route, green refresh). Regenerate with `npm run icons` (requires Pillow).
+
 ## Project layout
 
 ```
@@ -108,7 +122,9 @@ src/
   actions/           # stat, platform-summary, refresh
   services/          # cache, wigle, wdgwars, wardrift
   settings.ts        # Zod schemas
+  icons.ts           # key image paths
   formatting.ts
+scripts/icons/       # PNG generator
 ```
 
 ## Scripts
@@ -119,7 +135,8 @@ src/
 | `npm run watch` | Rebuild on change and `streamdeck restart` |
 | `npm run link` | Symlink plugin into Stream Deck Plugins folder |
 | `npm run validate` | Validate plugin package via CLI |
-| `npm run smoke` | Offline schema / formatting checks (no API keys) |
+| `npm run smoke` | Offline schema / formatting / icon checks (no API keys) |
+| `npm run icons` | Regenerate PNG icons via `scripts/icons/generate_icons.py` |
 
 ## Security notes
 

@@ -1,6 +1,6 @@
 {
 	"name": "wardeck",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"description": "Elgato Stream Deck plugin that displays WiGLE, WDGWars, and Wardrift wardriving statistics",
 	"type": "module",
 	"scripts": {
@@ -8,7 +8,8 @@
 		"watch": "rollup -c -w --watch.onEnd=\"streamdeck restart com.jazzactual.wardeck\"",
 		"link": "streamdeck link com.jazzactual.wardeck.sdPlugin",
 		"validate": "streamdeck validate com.jazzactual.wardeck.sdPlugin",
-		"smoke": "node scripts/smoke.mjs"
+		"smoke": "node scripts/smoke.mjs",
+		"icons": "python3 scripts/icons/generate_icons.py"
 	},
 	"engines": {
 		"node": ">=24"

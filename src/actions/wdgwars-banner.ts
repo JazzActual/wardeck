@@ -37,13 +37,9 @@ export function buildWdgwarsBannerModel(): ComposedBannerModel {
 
 	const data = entry.data;
 	const username = (data.username ?? "").trim();
-	const gang = typeof data.gang === "string" ? data.gang.trim() : "";
 
 	return {
-		identity: buildIdentityLine(
-			[username || null, gang ? truncateGang(gang) : null],
-			"WDGWars"
-		),
+		identity: buildIdentityLine([username || null], "WDGWars"),
 		brand: "WDGWARS",
 		columns: [
 			{
@@ -124,11 +120,4 @@ function readBadgeCount(data: WdgwarsMe): number | null {
 
 function asNumber(value: number | string | null): number | null {
 	return typeof value === "number" && !Number.isNaN(value) ? value : null;
-}
-
-function truncateGang(gang: string): string {
-	if (gang.length <= 18) {
-		return gang;
-	}
-	return `${gang.slice(0, 17)}…`;
 }

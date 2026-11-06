@@ -12,15 +12,11 @@ export const WigleMetricSchema = z.preprocess(
 );
 export type WigleMetric = z.infer<typeof WigleMetricSchema>;
 
-export const WdgwarsMetricSchema = z.enum([
-	"total",
-	"wifi",
-	"ble",
-	"gang",
-	"aircraft",
-	"mesh",
-	"badges"
-]);
+/** Gang key removed — names overflow Stream Deck titles (migrates → total). */
+export const WdgwarsMetricSchema = z.preprocess(
+	(value) => (value === "gang" ? "total" : value),
+	z.enum(["total", "wifi", "ble", "aircraft", "mesh", "badges"])
+);
 export type WdgwarsMetric = z.infer<typeof WdgwarsMetricSchema>;
 
 export const WardriftMetricSchema = z.enum([
@@ -149,7 +145,6 @@ export const WDGWARS_METRIC_LABELS: Record<WdgwarsMetric, string> = {
 	total: "Total",
 	wifi: "WiFi",
 	ble: "BLE",
-	gang: "Gang",
 	aircraft: "Aircraft",
 	mesh: "Mesh",
 	badges: "Badges"

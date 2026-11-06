@@ -80,8 +80,6 @@ export function readWdgwarsMetric(
 			return data.wifi ?? null;
 		case "ble":
 			return data.ble ?? null;
-		case "gang":
-			return data.gang ?? null;
 		case "aircraft":
 			return data.aircraft ?? null;
 		case "mesh":

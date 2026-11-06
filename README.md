@@ -13,7 +13,7 @@ Elgato Stream Deck plugin that shows live wardriving statistics from **WiGLE**, 
 
 Developed for **local install / sideload** with a temporary UUID (`com.jazzactual.wardeck`) — not yet on Elgato Marketplace / Maker.
 
-## Install for friends
+## Easy Install
 
 Download the latest **`.streamDeckPlugin`** from [GitHub Releases](https://github.com/JazzActual/wardeck/releases), then double-click it (or open it with the Stream Deck app). Stream Deck installs Wardeck like any other plugin — no Terminal or Node.js required. After install, add Wardeck actions from the category list and enter API credentials in the Property Inspector.
 

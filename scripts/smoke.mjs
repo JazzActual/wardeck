@@ -335,10 +335,28 @@ for (const mark of [
 	"bluetooth",
 	"plane",
 	"network",
-	"award"
+	"award",
+	"biceps-flexed",
+	"user-round-group",
+	"radio-tower"
 ]) {
-	assert.ok(lucideMarksSrc.includes(`${mark}:`), `lucide-marks missing ${mark}`);
+	assert.ok(lucideMarksSrc.includes(`"${mark}"`) || lucideMarksSrc.includes(`${mark}:`) || lucideMarksSrc.includes(`"${mark}":`), `lucide-marks missing ${mark}`);
 }
+
+// Keypad thirds layout: icon / label / value baked into SVG; title overlay cleared.
+const keyRenderSrc = fs.readFileSync(path.join(repoRoot, "src/key/render.ts"), "utf8");
+assert.ok(keyRenderSrc.includes("size / 3"), "key render missing thirds");
+assert.ok(keyRenderSrc.includes("renderKeyImage"), "key render missing renderKeyImage");
+const statSrc = fs.readFileSync(path.join(repoRoot, "src/actions/stat.ts"), "utf8");
+assert.ok(statSrc.includes("renderKeyImage"), "stat missing composed key image");
+assert.ok(statSrc.includes('setTitle("")'), "stat should clear Stream Deck title overlay");
+const summarySrc = fs.readFileSync(path.join(repoRoot, "src/actions/platform-summary.ts"), "utf8");
+assert.ok(summarySrc.includes("renderKeyImage"), "platform-summary missing composed key image");
+assert.ok(summarySrc.includes('setTitle("")'), "platform-summary should clear title overlay");
+const iconsGen = fs.readFileSync(path.join(repoRoot, "scripts/icons/generate_icons.py"), "utf8");
+assert.ok(iconsGen.includes("KEY_TOP_THIRD_GLYPH_FRAC"), "icons gen missing top-third glyph frac");
+assert.ok(iconsGen.includes("lucide_viewbox"), "icons gen missing viewBox square fit");
+
 const renderSrc = fs.readFileSync(path.join(repoRoot, "src/banner/render.ts"), "utf8");
 assert.ok(renderSrc.includes("renderLucideGlyph"), "render missing Lucide painter");
 assert.ok(renderSrc.includes("SOLO_GLYPH = 15"), "solo glyph size drift");

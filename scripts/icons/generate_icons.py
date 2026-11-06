@@ -31,8 +31,9 @@ DIM = (170, 170, 175, 255)
 WHITE = "#FFFFFF"
 CLEAR = (0, 0, 0, 0)
 
-# Glyph height on a 72px key (≈78 on 320 preview canvas).
-KEY_GLYPH_FRAC = 78 / 320
+# Glyph size as a fraction of the top-third band (viewBox square, not content-crop).
+# Key faces use strict vertical thirds: icon / label / value (label+value painted at runtime).
+KEY_TOP_THIRD_GLYPH_FRAC = 0.62
 
 SINGLE_MARKS = (
     "wifi",
@@ -61,7 +62,8 @@ def save(img: Image.Image, path: Path) -> None:
 
 def key_field(draw: ImageDraw.ImageDraw, size: int) -> None:
     draw.rectangle([0, 0, size, size], fill=INK)
-    draw.rectangle([0, 0, size, int(size * 0.40)], fill=INK_SOFT)
+    # Soft band = top third (icon zone).
+    draw.rectangle([0, 0, size, int(size / 3)], fill=INK_SOFT)
 
 
 def content_bbox(im: Image.Image, alpha_min: int = 24) -> tuple[int, int, int, int]:
@@ -109,8 +111,15 @@ def raster_lucide(name: str, out_size: int, stroke: str = LIGHT) -> Image.Image:
 
 
 def lucide_fitted(name: str, target_h: int, stroke: str = LIGHT) -> Image.Image:
+    """Legacy content-bbox height fit — used for list/category mono icons only."""
     raw = raster_lucide(name, out_size=max(target_h * 4, 64), stroke=stroke)
     return fit_height(raw, target_h)
+
+
+def lucide_viewbox(name: str, target: int, stroke: str = LIGHT) -> Image.Image:
+    """Fit the full Lucide 24×24 viewBox square — preserves designed optical centering."""
+    raw = raster_lucide(name, out_size=max(target * 4, 64), stroke=stroke)
+    return raw.resize((target, target), Image.Resampling.LANCZOS)
 
 
 def make_mono(name: str, size: int) -> Image.Image:
@@ -135,12 +144,14 @@ def make_mono_combo(size: int) -> Image.Image:
 
 
 def make_key(name: str, size: int) -> Image.Image:
+    """Static fallback key: glyph centered in the top third (label/value painted at runtime)."""
     img = Image.new("RGBA", (size, size), CLEAR)
     draw = ImageDraw.Draw(img)
     key_field(draw, size)
-    gh = max(1, round(size * KEY_GLYPH_FRAC))
-    glyph = lucide_fitted(name, gh, stroke=LIGHT)
-    paste_center(img, glyph, size // 2, int(size * 0.30))
+    third = size / 3
+    gh = max(1, round(third * KEY_TOP_THIRD_GLYPH_FRAC))
+    glyph = lucide_viewbox(name, gh, stroke=LIGHT)
+    paste_center(img, glyph, size // 2, int(third / 2))
     return img
 
 
@@ -148,13 +159,14 @@ def make_key_combo(size: int) -> Image.Image:
     img = Image.new("RGBA", (size, size), CLEAR)
     draw = ImageDraw.Draw(img)
     key_field(draw, size)
-    gh = max(1, round(size * KEY_GLYPH_FRAC))
-    wifi = lucide_fitted("wifi", gh, stroke=LIGHT)
-    bt = lucide_fitted("bluetooth", gh, stroke=LIGHT)
+    third = size / 3
+    gh = max(1, round(third * KEY_TOP_THIRD_GLYPH_FRAC * 0.72))
+    wifi = lucide_viewbox("wifi", gh, stroke=LIGHT)
+    bt = lucide_viewbox("bluetooth", gh, stroke=LIGHT)
     gap = max(4, int(size * 0.04))
     total_w = wifi.width + gap + bt.width
     left = (size - total_w) // 2
-    cy = int(size * 0.30)
+    cy = int(third / 2)
     paste_center(img, wifi, left + wifi.width // 2, cy)
     paste_center(img, bt, left + wifi.width + gap + bt.width // 2, cy)
     return img
@@ -167,8 +179,8 @@ def make_marketplace(size: int) -> Image.Image:
     m = int(size * 0.10)
     draw.rectangle([m, m, size - m, size - m], outline=DIM, width=max(2, size // 64))
     gh = max(1, int(size * 0.36))
-    wifi = lucide_fitted("wifi", gh, stroke=LIGHT)
-    bt = lucide_fitted("bluetooth", gh, stroke=LIGHT)
+    wifi = lucide_viewbox("wifi", gh, stroke=LIGHT)
+    bt = lucide_viewbox("bluetooth", gh, stroke=LIGHT)
     gap = max(8, int(size * 0.04))
     total_w = wifi.width + gap + bt.width
     left = (size - total_w) // 2

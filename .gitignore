@@ -1,6 +1,9 @@
 # Node.js
 node_modules/
 
+# Local icon-tooling venv (Pillow / cairosvg)
+.venv-icons/
+
 # Stream Deck files
 *.sdPlugin/bin
 *.sdPlugin/logs

@@ -7,7 +7,8 @@ import streamDeck, {
 } from "@elgato/streamdeck";
 
 import { EMPTY_TITLE, formatCompactNumber } from "../formatting.js";
-import { platformKeyImage } from "../icons.js";
+import { platformKeyMark } from "../icons.js";
+import { renderKeyImage } from "../key/render.js";
 import { statsCache } from "../services/cache.js";
 import {
 	parsePlatformSummarySettings,
@@ -60,30 +61,44 @@ export class PlatformSummaryAction extends SingletonAction<PlatformSummarySettin
 		}
 
 		const settings = parsePlatformSummarySettings(rawSettings);
-		await action.setImage(platformKeyImage(settings.platform));
-
-		if (settings.platform === "wigle") {
-			const entry = statsCache.getWigle();
-			const primary = entry.data?.statistics?.discoveredWiFi;
-			await action.setTitle(
-				`WiGLE\n${entry.configured ? formatCompactNumber(primary) : EMPTY_TITLE}`
-			);
-			return;
-		}
-
-		if (settings.platform === "wdgwars") {
-			const entry = statsCache.getWdgwars();
-			const primary = entry.data?.total;
-			await action.setTitle(
-				`WDGWars\n${entry.configured ? formatCompactNumber(primary) : EMPTY_TITLE}`
-			);
-			return;
-		}
-
-		const entry = statsCache.getWardrift();
-		const primary = entry.data?.wardrive?.lifetime?.access_points_discovered;
-		await action.setTitle(
-			`Wardrift\n${entry.configured ? formatCompactNumber(primary) : EMPTY_TITLE}`
+		const { label, value } = resolvePlatformSummaryDisplay(settings);
+		await action.setImage(
+			renderKeyImage({
+				mark: platformKeyMark(settings.platform),
+				label,
+				value
+			})
 		);
+		await action.setTitle("");
 	}
+}
+
+export function resolvePlatformSummaryDisplay(settings: PlatformSummarySettings): {
+	label: string;
+	value: string;
+} {
+	if (settings.platform === "wigle") {
+		const entry = statsCache.getWigle();
+		const primary = entry.data?.statistics?.discoveredWiFi;
+		return {
+			label: "WiGLE",
+			value: entry.configured ? formatCompactNumber(primary) : EMPTY_TITLE
+		};
+	}
+
+	if (settings.platform === "wdgwars") {
+		const entry = statsCache.getWdgwars();
+		const primary = entry.data?.total;
+		return {
+			label: "WDGWars",
+			value: entry.configured ? formatCompactNumber(primary) : EMPTY_TITLE
+		};
+	}
+
+	const entry = statsCache.getWardrift();
+	const primary = entry.data?.wardrive?.lifetime?.access_points_discovered;
+	return {
+		label: "Wardrift",
+		value: entry.configured ? formatCompactNumber(primary) : EMPTY_TITLE
+	};
 }

@@ -80,20 +80,21 @@ assert.equal(GlobalSettingsSchema.parse({ wigleTimezone: "" }).wigleTimezone, "l
 const PlatformSchema = z.enum(["wigle", "wdgwars", "wardrift"]);
 assert.deepEqual(PlatformSchema.options, ["wigle", "wdgwars", "wardrift"]);
 
-const WardriftMetricSchema = z.enum([
-	"networks",
-	"routes",
-	"threats",
-	"streak",
-	"level",
-	"currency",
-	"expToNext",
-	"name",
-	"faction"
-]);
+const WardriftMetricSchema = z.preprocess(
+	(value) => (value === "faction" ? "networks" : value),
+	z.enum([
+		"networks",
+		"routes",
+		"threats",
+		"streak",
+		"level",
+		"currency",
+		"expToNext",
+		"name"
+	])
+);
 assert.equal(WardriftMetricSchema.parse("networks"), "networks");
-
-const FACTION_NAMES = { 1: "Arcanum", 2: "Crusade", 3: "Technocracy" };
+assert.equal(WardriftMetricSchema.parse("faction"), "networks");
 
 function readWardriftMetric(data, metric) {
 	const character = data.characters?.[0];
@@ -115,13 +116,6 @@ function readWardriftMetric(data, metric) {
 			return character?.exp_to_next_level ?? null;
 		case "name":
 			return character?.name ?? null;
-		case "faction": {
-			if (typeof character?.faction === "string" && character.faction.trim()) {
-				return character.faction.trim();
-			}
-			const id = character?.faction_id;
-			return id !== undefined ? (FACTION_NAMES[id] ?? String(id)) : null;
-		}
 		default:
 			return null;
 	}
@@ -156,7 +150,6 @@ assert.equal(readWardriftMetric(sampleDashboard, "level"), 12);
 assert.equal(readWardriftMetric(sampleDashboard, "currency"), 340);
 assert.equal(readWardriftMetric(sampleDashboard, "expToNext"), 80);
 assert.equal(readWardriftMetric(sampleDashboard, "name"), "Scout");
-assert.equal(readWardriftMetric(sampleDashboard, "faction"), "Crusade");
 assert.equal(readWardriftMetric({}, "networks"), null);
 
 function hasWardriftCredentials(settings) {
@@ -215,10 +208,6 @@ const requiredIcons = [
 	"imgs/marks/zap/icon@2x.png",
 	"imgs/marks/zap/key.png",
 	"imgs/marks/zap/key@2x.png",
-	"imgs/marks/user-round-group/icon.png",
-	"imgs/marks/user-round-group/icon@2x.png",
-	"imgs/marks/user-round-group/key.png",
-	"imgs/marks/user-round-group/key@2x.png",
 	"imgs/marks/plane/icon.png",
 	"imgs/marks/plane/icon@2x.png",
 	"imgs/marks/plane/key.png",
@@ -337,11 +326,12 @@ for (const mark of [
 	"network",
 	"award",
 	"biceps-flexed",
-	"user-round-group",
 	"radio-tower"
 ]) {
 	assert.ok(lucideMarksSrc.includes(`"${mark}"`) || lucideMarksSrc.includes(`${mark}:`) || lucideMarksSrc.includes(`"${mark}":`), `lucide-marks missing ${mark}`);
 }
+assert.equal(lucideMarksSrc.includes("user-round-group"), false, "lucide-marks still has user-round-group (Faction)");
+
 
 // Keypad thirds layout: icon / label / value baked into SVG; title overlay cleared.
 const keyRenderSrc = fs.readFileSync(path.join(repoRoot, "src/key/render.ts"), "utf8");
@@ -498,6 +488,11 @@ for (const rel of ["ui/stat.html", "ui/platform-summary.html"]) {
 		false,
 		"stat PI still offers WDGWars Gang metric"
 	);
+	assert.equal(
+		statHtml.includes('value="faction"') || />\s*Faction\s*</.test(statHtml),
+		false,
+		"stat PI still offers Wardrift Faction metric"
+	);
 }
 
 {
@@ -510,6 +505,15 @@ for (const rel of ["ui/stat.html", "ui/platform-summary.html"]) {
 		/WDGWARS_METRIC_LABELS[\s\S]*?gang:\s*"Gang"/.test(settingsSrc),
 		false,
 		"WDGWARS_METRIC_LABELS still lists Gang"
+	);
+	assert.ok(
+		settingsSrc.includes('value === "faction"'),
+		"settings should migrate legacy wardriftMetric faction → networks"
+	);
+	assert.equal(
+		/WARDRIFT_METRIC_LABELS[\s\S]*?faction:\s*"Faction"/.test(settingsSrc),
+		false,
+		"WARDRIFT_METRIC_LABELS still lists Faction"
 	);
 }
 

@@ -19,17 +19,20 @@ export const WdgwarsMetricSchema = z.preprocess(
 );
 export type WdgwarsMetric = z.infer<typeof WdgwarsMetricSchema>;
 
-export const WardriftMetricSchema = z.enum([
-	"networks",
-	"routes",
-	"threats",
-	"streak",
-	"level",
-	"currency",
-	"expToNext",
-	"name",
-	"faction"
-]);
+/** Faction key removed — labels overflow Stream Deck keys (migrates → networks). */
+export const WardriftMetricSchema = z.preprocess(
+	(value) => (value === "faction" ? "networks" : value),
+	z.enum([
+		"networks",
+		"routes",
+		"threats",
+		"streak",
+		"level",
+		"currency",
+		"expToNext",
+		"name"
+	])
+);
 export type WardriftMetric = z.infer<typeof WardriftMetricSchema>;
 
 const dailyTimeSetting = z.preprocess((value) => {
@@ -158,8 +161,7 @@ export const WARDRIFT_METRIC_LABELS: Record<WardriftMetric, string> = {
 	level: "Level",
 	currency: "Coin",
 	expToNext: "To Next",
-	name: "Name",
-	faction: "Faction"
+	name: "Name"
 };
 
 /** Common IANA zones for the WiGLE daily-time PI select (plus `local`). */

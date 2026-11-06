@@ -38,7 +38,7 @@ export function buildWardriftBannerModel(): ComposedBannerModel {
 	const data = entry.data;
 	const character = data.characters?.[0];
 	const name = readWardriftMetric(data, "name");
-	const faction = resolveFaction(character) ?? readWardriftMetric(data, "faction");
+	const faction = resolveFaction(character);
 	const level = readWardriftMetric(data, "level");
 	const className =
 		typeof character?.class_name === "string" ? character.class_name : undefined;

@@ -14,7 +14,6 @@ export type IconMark =
 	| "coins"
 	| "biceps-flexed"
 	| "zap"
-	| "user-round-group"
 	| "plane"
 	| "network"
 	| "award"
@@ -32,7 +31,6 @@ const MARK_KEYS: Record<IconMark, string> = {
 	coins: "imgs/marks/coins/key",
 	"biceps-flexed": "imgs/marks/biceps-flexed/key",
 	zap: "imgs/marks/zap/key",
-	"user-round-group": "imgs/marks/user-round-group/key",
 	plane: "imgs/marks/plane/key",
 	network: "imgs/marks/network/key",
 	award: "imgs/marks/award/key",
@@ -59,7 +57,7 @@ export function platformKeyMark(_platform: Platform): KeyMark {
  * - WiGLE Rank / Month rank → podium; Cell → radio-tower
  * - Wardrift Networks → radio; Routes → car; Streak → calendar;
  *   Threats → swords; Coin → coins; Level → biceps-flexed;
- *   To next → zap; Faction → user-round-group
+ *   To next → zap
  * - WiFi-specific / else → wifi
  */
 export function resolveStatMark(settings: StatActionSettings): KeyMark {
@@ -103,8 +101,6 @@ export function resolveStatMark(settings: StatActionSettings): KeyMark {
 				return "biceps-flexed";
 			case "expToNext":
 				return "zap";
-			case "faction":
-				return "user-round-group";
 			default:
 				break;
 		}

@@ -460,6 +460,23 @@ for (const rel of ["ui/stat.html", "ui/platform-summary.html"]) {
 	assert.equal(html.includes("Refresh"), false, `${rel} still mentions Refresh`);
 }
 
+{
+	const statHtml = fs.readFileSync(path.join(pluginRoot, "ui/stat.html"), "utf8");
+	assert.ok(statHtml.includes('id="platform"'), "stat PI missing platform select id");
+	assert.ok(statHtml.includes("syncMetricVisibility"), "stat PI missing metric filter script");
+	assert.ok(statHtml.includes('id="metric-wigle"'), "stat PI missing WiGLE metric item");
+	assert.ok(statHtml.includes('id="metric-wdgwars"'), "stat PI missing WDGWars metric item");
+	assert.ok(statHtml.includes('id="metric-wardrift"'), "stat PI missing Wardrift metric item");
+	// Per-platform metric menus must not all be visible labels at once.
+	assert.equal(statHtml.includes("WiGLE Metric"), false, "stat PI still shows WiGLE Metric label");
+	assert.equal(statHtml.includes("WDGWars Metric"), false, "stat PI still shows WDGWars Metric label");
+	assert.equal(statHtml.includes("Wardrift Metric"), false, "stat PI still shows Wardrift Metric label");
+	assert.ok(
+		statHtml.includes('label="Metric"'),
+		"stat PI should use a single Metric label (filtered by platform)"
+	);
+}
+
 assert.equal(
 	manifest.Actions.some((a) => String(a.UUID).includes("refresh")),
 	false,

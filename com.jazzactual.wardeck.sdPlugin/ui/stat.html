@@ -6,15 +6,16 @@
 		<script src="sdpi-components.js"></script>
 	</head>
 	<body>
+		<!-- Two dropdowns only: Platform, then Metric for that platform (others hidden). -->
 		<sdpi-item label="Platform">
-			<sdpi-select setting="platform" default="wigle">
+			<sdpi-select id="platform" setting="platform" default="wigle">
 				<option value="wigle">WiGLE</option>
 				<option value="wdgwars">WDGWars</option>
 				<option value="wardrift">Wardrift</option>
 			</sdpi-select>
 		</sdpi-item>
 
-		<sdpi-item label="WiGLE Metric">
+		<sdpi-item id="metric-wigle" label="Metric" data-platform="wigle">
 			<sdpi-select setting="wigleMetric" default="wifiAll">
 				<option value="wifiAll">WiFi (all)</option>
 				<option value="cell">Cell</option>
@@ -24,7 +25,7 @@
 			</sdpi-select>
 		</sdpi-item>
 
-		<sdpi-item label="WDGWars Metric">
+		<sdpi-item id="metric-wdgwars" label="Metric" data-platform="wdgwars" style="display: none">
 			<sdpi-select setting="wdgwarsMetric" default="total">
 				<option value="total">Total</option>
 				<option value="wifi">WiFi</option>
@@ -36,7 +37,7 @@
 			</sdpi-select>
 		</sdpi-item>
 
-		<sdpi-item label="Wardrift Metric">
+		<sdpi-item id="metric-wardrift" label="Metric" data-platform="wardrift" style="display: none">
 			<sdpi-select setting="wardriftMetric" default="networks">
 				<option value="networks">Networks</option>
 				<option value="routes">Routes</option>
@@ -124,6 +125,30 @@
 		<script>
 			const { streamDeckClient } = SDPIComponents;
 			const statusEl = document.getElementById("test-status");
+			const platformSelect = document.getElementById("platform");
+			const metricItems = {
+				wigle: document.getElementById("metric-wigle"),
+				wdgwars: document.getElementById("metric-wdgwars"),
+				wardrift: document.getElementById("metric-wardrift")
+			};
+
+			/** Show only the Metric dropdown for the selected platform. */
+			function syncMetricVisibility(platform) {
+				const selected = metricItems[platform] ? platform : "wigle";
+				for (const [key, el] of Object.entries(metricItems)) {
+					if (!el) {
+						continue;
+					}
+					// Inline display — sdpi-item host styles ignore the HTML hidden attribute.
+					el.style.display = key === selected ? "" : "none";
+				}
+			}
+
+			platformSelect.addEventListener("valuechange", (ev) => {
+				syncMetricVisibility(ev.target.value);
+			});
+			// Initial paint before valuechange (defaults / delayed settings sync).
+			syncMetricVisibility(platformSelect.value || "wigle");
 
 			function setStatus(ok, message) {
 				statusEl.textContent = message;

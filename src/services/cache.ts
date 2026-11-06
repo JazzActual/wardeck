@@ -88,9 +88,14 @@ class StatsCache {
 		const fingerprint = scheduleFingerprint(settings);
 		if (!force && fingerprint === this.settingsFingerprint) {
 			// Session-token / last-fetch persistence must not cascade into a full re-poll.
+			// Still fill a cold cache (e.g. appear after restart before a timer tick).
+			await this.fetchColdConfigured(settings);
 			return;
 		}
 		this.settingsFingerprint = fingerprint;
+		// Fetch configured platforms with empty in-memory data NOW (don't wait for
+		// 4h/daily schedule or Property Inspector Test). Then arm the timers.
+		await this.fetchColdConfigured(settings);
 		for (const platform of ALL_PLATFORMS) {
 			this.schedule(platform, settings);
 		}
@@ -103,6 +108,45 @@ class StatsCache {
 		await Promise.all(targets.map((p) => this.poll(p, settings, force)));
 	}
 
+	/**
+	 * Action willAppear helper: if this platform is configured but cache is empty,
+	 * force a fetch (same path PI Test uses after a successful probe).
+	 */
+	ensureFetched(platform: Platform): void {
+		void this.ensureFetchedAsync(platform);
+	}
+
+	async ensureFetchedAsync(platform: Platform): Promise<void> {
+		const settings = parseGlobalSettings(await streamDeck.settings.getGlobalSettings());
+		if (!hasPlatformCredentials(platform, settings)) {
+			this.clearPlatform(platform);
+			this.notify();
+			return;
+		}
+		this.markConfigured(platform);
+		if (this.hasCachedData(platform)) {
+			return;
+		}
+		await this.poll(platform, settings, true);
+		// Make sure a timer exists for the next interval/daily slot.
+		this.schedule(platform, settings);
+	}
+
+	/** Force-poll every configured platform that has no in-memory payload yet. */
+	private async fetchColdConfigured(settings: GlobalSettings): Promise<void> {
+		const cold = ALL_PLATFORMS.filter(
+			(platform) =>
+				hasPlatformCredentials(platform, settings) && !this.hasCachedData(platform)
+		);
+		if (cold.length === 0) {
+			return;
+		}
+		for (const platform of cold) {
+			this.markConfigured(platform);
+		}
+		this.notify();
+		await Promise.all(cold.map((platform) => this.poll(platform, settings, true)));
+	}
 	getWigle(): CacheEntry<WigleUserStats> {
 		return this.wigle;
 	}

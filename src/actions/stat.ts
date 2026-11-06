@@ -26,7 +26,9 @@ export class StatAction extends SingletonAction<StatActionSettings> {
 
 	override async onWillAppear(ev: WillAppearEvent<StatActionSettings>): Promise<void> {
 		this.ensureSubscription();
-		await this.render(ev.action, ev.payload.settings);
+		const settings = parseStatSettings(ev.payload.settings);
+		statsCache.ensureFetched(settings.platform);
+		await this.render(ev.action, settings);
 	}
 
 	override async onDidReceiveSettings(

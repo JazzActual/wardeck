@@ -21,7 +21,9 @@ export class PlatformSummaryAction extends SingletonAction<PlatformSummarySettin
 
 	override async onWillAppear(ev: WillAppearEvent<PlatformSummarySettings>): Promise<void> {
 		this.ensureSubscription();
-		await this.render(ev.action, ev.payload.settings);
+		const settings = parsePlatformSummarySettings(ev.payload.settings);
+		statsCache.ensureFetched(settings.platform);
+		await this.render(ev.action, settings);
 	}
 
 	override async onDidReceiveSettings(

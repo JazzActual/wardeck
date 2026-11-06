@@ -411,6 +411,21 @@ assert.equal(delayForPlanColdAware(true, deferred, 0, now), deferred.delayMs);
 const cacheSrc = fs.readFileSync(path.join(repoRoot, "src/services/cache.ts"), "utf8");
 assert.ok(cacheSrc.includes("hasCachedData"), "cache missing cold-cache gate");
 assert.ok(cacheSrc.includes("delayForPlan"), "cache missing delayForPlan helper");
+assert.ok(cacheSrc.includes("fetchColdConfigured"), "cache missing startup cold fetch");
+assert.ok(cacheSrc.includes("ensureFetched"), "cache missing appear ensureFetched");
+const pluginSrc = fs.readFileSync(path.join(repoRoot, "src/plugin.ts"), "utf8");
+assert.ok(
+	pluginSrc.includes("connect()") && pluginSrc.includes("statsCache.start()"),
+	"plugin must start cache after connect"
+);
+assert.ok(
+	fs.readFileSync(path.join(repoRoot, "src/banner/dial-banner.ts"), "utf8").includes("ensureFetched"),
+	"banner appear must ensureFetched"
+);
+assert.ok(
+	fs.readFileSync(path.join(repoRoot, "src/actions/stat.ts"), "utf8").includes("ensureFetched"),
+	"stat appear must ensureFetched"
+);
 
 function nextDailyLocal(timeHHMM, fromMs) {
 	const [h, m] = timeHHMM.split(":").map(Number);

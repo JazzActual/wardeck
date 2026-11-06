@@ -85,6 +85,5 @@ streamDeck.ui.onSendToPlugin(async (ev) => {
 	}
 });
 
-void statsCache.start();
-
-streamDeck.connect();
+// Connect first so global settings (credentials) are available, then load + fetch.
+void streamDeck.connect().then(() => statsCache.start());

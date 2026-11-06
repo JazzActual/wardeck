@@ -15,6 +15,10 @@ import { readWigleMetric, type WigleUserStats } from "../services/wigle.js";
  */
 @action({ UUID: "com.jazzactual.wardeck.wigle-banner" })
 export class WigleBannerAction extends DialBannerAction {
+	protected cachePlatform(): "wigle" {
+		return "wigle";
+	}
+
 	protected buildModel(): ComposedBannerModel {
 		return buildWigleBannerModel();
 	}

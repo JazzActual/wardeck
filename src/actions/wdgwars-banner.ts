@@ -15,6 +15,10 @@ import { readWdgwarsMetric, type WdgwarsMe } from "../services/wdgwars.js";
  */
 @action({ UUID: "com.jazzactual.wardeck.wdgwars-banner" })
 export class WdgwarsBannerAction extends DialBannerAction {
+	protected cachePlatform(): "wdgwars" {
+		return "wdgwars";
+	}
+
 	protected buildModel(): ComposedBannerModel {
 		return buildWdgwarsBannerModel();
 	}

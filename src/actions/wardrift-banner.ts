@@ -15,6 +15,10 @@ import { readWardriftMetric, resolveFaction } from "../services/wardrift.js";
  */
 @action({ UUID: "com.jazzactual.wardeck.wardrift-banner" })
 export class WardriftBannerAction extends DialBannerAction {
+	protected cachePlatform(): "wardrift" {
+		return "wardrift";
+	}
+
 	protected buildModel(): ComposedBannerModel {
 		return buildWardriftBannerModel();
 	}

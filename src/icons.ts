@@ -106,11 +106,3 @@ export function statKeyImage(settings: StatActionSettings): string {
 	}
 	return MARK_KEYS.wifi;
 }
-
-/** Refresh: All / WDGWars keep combo; WiGLE / Wardrift → wifi. */
-export function refreshKeyImage(platform: Platform | "all"): string {
-	if (platform === "all" || platform === "wdgwars") {
-		return MARK_KEYS.combo;
-	}
-	return MARK_KEYS.wifi;
-}

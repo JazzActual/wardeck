@@ -12,7 +12,7 @@
  * Layout (4×2 keypad + 4 Encoder dials):
  *
  *   Page 1 — WiGLE + WDGWars
- *     [WiGLE Sum] [WiFi] [Rank] [Refresh]
+ *     [WiGLE Sum] [WiFi] [Rank] [Cell]
  *     [WDG Sum]   [Total]    [WiFi] [Next →]
  *     Dials: WiGLE Banner ×4 (Sample A composed strip)
  *
@@ -59,7 +59,6 @@ const PAGE_NEXT = "com.elgato.streamdeck.page.next";
 const UUID = {
 	stat: "com.jazzactual.wardeck.stat",
 	summary: "com.jazzactual.wardeck.platform-summary",
-	refresh: "com.jazzactual.wardeck.refresh",
 	wardriftBanner: "com.jazzactual.wardeck.wardrift-banner",
 	wigleBanner: "com.jazzactual.wardeck.wigle-banner",
 	wdgwarsBanner: "com.jazzactual.wardeck.wdgwars-banner"
@@ -145,17 +144,6 @@ function summary(page, col, row, platform, name) {
 	});
 }
 
-function refresh(page, col, row) {
-	return pluginAction({
-		page,
-		col,
-		row,
-		uuid: UUID.refresh,
-		name: "Refresh",
-		settings: { platform: "all" }
-	});
-}
-
 /** Same banner action on every dial — plugin slices one 800×100 strip. */
 function banner(page, col, uuid, name) {
 	return {
@@ -184,7 +172,7 @@ const page1Keypad = {
 	"0,0": summary(1, 0, 0, "wigle", "WiGLE"),
 	"1,0": stat(1, 1, 0, "wigle", "wigleMetric", "wifiAll", "WiFi"),
 	"2,0": stat(1, 2, 0, "wigle", "wigleMetric", "rank", "Rank"),
-	"3,0": refresh(1, 3, 0),
+	"3,0": stat(1, 3, 0, "wigle", "wigleMetric", "cell", "Cell"),
 	"0,1": summary(1, 0, 1, "wdgwars", "WDGWars"),
 	"1,1": stat(1, 1, 1, "wdgwars", "wdgwarsMetric", "total", "Total"),
 	"2,1": stat(1, 2, 1, "wdgwars", "wdgwarsMetric", "wifi", "WiFi"),
@@ -277,7 +265,7 @@ function main() {
 
 		console.log(`Wrote ${OUT}`);
 		console.log("Device: Stream Deck+ (20GBD9901)  DeviceType: 7");
-		console.log("Page 1: WiGLE summary/wifiAll/rank + WDGWars summary/total/wifi + Refresh + Next");
+		console.log("Page 1: WiGLE summary/wifiAll/rank/cell + WDGWars summary/total/wifi + Next");
 		console.log("Page 2: Prev + Wardrift summary/networks/routes/streak + WDGWars BLE");
 		console.log("Encoders: page1 WiGLE Banner ×4; page2 Wardrift Banner ×4");
 		console.log("WDGWars Banner: assign manually to all four dials when desired");

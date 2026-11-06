@@ -35,22 +35,6 @@
 			]
 		},
 		{
-			"Name": "Refresh",
-			"UUID": "com.jazzactual.wardeck.refresh",
-			"Icon": "imgs/actions/refresh/icon",
-			"Tooltip": "Force-refresh WiGLE, WDGWars, and/or Wardrift stats.",
-			"PropertyInspectorPath": "ui/refresh.html",
-			"Controllers": ["Keypad"],
-			"States": [
-				{
-					"Image": "imgs/actions/refresh/key",
-					"TitleAlignment": "middle",
-					"FontSize": 12,
-					"Title": "Refresh"
-				}
-			]
-		},
-		{
 			"Name": "Wardrift Banner",
 			"UUID": "com.jazzactual.wardeck.wardrift-banner",
 			"Icon": "imgs/actions/wardrift-banner/icon",

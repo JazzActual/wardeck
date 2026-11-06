@@ -215,8 +215,6 @@ def main() -> None:
     copy_pair(MARKS / "wifi" / "key", PLUGIN / "actions" / "stat" / "key")
     copy_pair(MARKS / "radio" / "icon", PLUGIN / "actions" / "platform-summary" / "icon")
     copy_pair(MARKS / "radio" / "key", PLUGIN / "actions" / "platform-summary" / "key")
-    copy_pair(MARKS / "combo" / "icon", PLUGIN / "actions" / "refresh" / "icon")
-    copy_pair(MARKS / "combo" / "key", PLUGIN / "actions" / "refresh" / "key")
     copy_pair(MARKS / "wifi" / "icon", PLUGIN / "actions" / "wardrift-banner" / "icon")
     copy_pair(MARKS / "wifi" / "key", PLUGIN / "actions" / "wardrift-banner" / "key")
     copy_pair(MARKS / "wifi" / "icon", PLUGIN / "actions" / "wigle-banner" / "icon")
@@ -227,7 +225,6 @@ def main() -> None:
     copy_pair(MARKS / "radio" / "key", PLUGIN / "platforms" / "wigle" / "key")
     copy_pair(MARKS / "radio" / "key", PLUGIN / "platforms" / "wdgwars" / "key")
     copy_pair(MARKS / "radio" / "key", PLUGIN / "platforms" / "wardrift" / "key")
-    copy_pair(MARKS / "combo" / "key", PLUGIN / "platforms" / "all" / "key")
     copy_pair(MARKS / "bluetooth" / "key", PLUGIN / "platforms" / "bluetooth" / "key")
 
 

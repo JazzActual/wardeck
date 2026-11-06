@@ -50,7 +50,7 @@ The plugin ships a pre-laid **Wardeck** profile for **Stream Deck+** (8 LCD keys
 
 **Page 1 — WiGLE + WDGWars**
 
-| WiGLE (summary) | WiFi | Rank | Refresh (all) |
+| WiGLE (summary) | WiFi | Rank | Cell |
 | --- | --- | --- | --- |
 | WDGWars (summary) | Total | WiFi | Next page → |
 
@@ -141,7 +141,7 @@ Secrets are stored in **global settings only** (never action settings / profiles
 
 ### Configure Wardrift in the Property Inspector
 
-1. Select any Wardeck key (Stat, Platform Summary, or Refresh).
+1. Select any Wardeck key (Stat or Platform Summary).
 2. Under **API Credentials (global)**, enter **Wardrift Username** and **Wardrift Password**.
 3. Click **Test Wardrift** to verify sign-in + dashboard fetch.
 4. On a **Stat** key, set Platform → **Wardrift** and pick a metric (Networks, Routes, Threats, Streak, Level, Coin, To next, Name, Faction).
@@ -157,7 +157,6 @@ Without credentials, keys show `—` and the plugin still runs (no crash). CI / 
 | --- | --- |
 | **Stat** | Configurable platform + metric (WiGLE / WDGWars / Wardrift). Press = manual refresh for that platform. |
 | **Platform Summary** | Logo-style key with primary metric (WiGLE WiFi all / WDGWars Total / Wardrift Networks). Press = open platform site. |
-| **Refresh** | Force refresh all or one platform. |
 | **Wardrift Banner** | Encoder-only. Full-strip Wardrift dashboard (name / faction / level·class, networks, routes, threats, streak, coin, to next). Display-only. Empty/error state without credentials. Streak `0` shows as `0`. |
 | **WiGLE Banner** | Encoder-only. Sample A: WIFI · RANK + MONTHLY RANK · MONTHLY EVENTS · BT. Labels spell **MONTHLY** (never `MO`). Display-only. |
 | **WDGWars Banner** | Encoder-only. Sample A: TOTAL · WIFI + BLE · AIRCRAFT · MESH + BADGES (badge count). Display-only. |
@@ -172,8 +171,8 @@ Lucide-only monochrome marks (`lucide-static`, ISC), white/light on near-black k
 | --- | --- | --- |
 | `imgs/marks/wifi` | `wifi` | Wi‑Fi–specific stats |
 | `imgs/marks/bluetooth` | `bluetooth` | Bluetooth (WDGWars BLE) |
-| `imgs/marks/combo` | `wifi` + `bluetooth` | Refresh All / WDGWars |
-| `imgs/marks/radio` | `radio` | Platform summaries / totals |
+| `imgs/marks/combo` | `wifi` + `bluetooth` | WDGWars banner / combo compose |
+| `imgs/marks/radio` | `radio` | Platform summaries / totals / Wardrift Networks |
 | `imgs/marks/podium` | `podium` | WiGLE Rank / Month rank |
 | `imgs/marks/car` | `car` | Wardrift Routes |
 | `imgs/marks/calendar` | `calendar` | Wardrift Streak |
@@ -187,7 +186,7 @@ Lucide-only monochrome marks (`lucide-static`, ISC), white/light on near-black k
 | `imgs/marks/award` | `award` | WDGWars Badges (count) |
 | `imgs/marks/radio-tower` | `radio-tower` | WiGLE Cell |
 
-Category uses wifi; marketplace / summary / refresh default to combo. Regenerate with `npm run icons` (requires Pillow, cairosvg, and `npm install` for lucide-static).
+Category uses wifi; marketplace uses combo compose; platform summaries use radio. Regenerate with `npm run icons` (requires Pillow, cairosvg, and `npm install` for lucide-static).
 
 ## Project layout
 
@@ -197,7 +196,7 @@ com.jazzactual.wardeck.sdPlugin/   # packaged plugin (manifest, UI, imgs, layout
   profiles/Wardeck.streamDeckProfile   # Stream Deck+ default layout (keys + dials)
 src/
   plugin.ts
-  actions/           # stat, platform-summary, refresh, *-banner
+  actions/           # stat, platform-summary, *-banner
   banner/            # shared 800×100 compose + dial sync
   services/          # cache, wigle, wdgwars, wardrift
   settings.ts        # Zod schemas

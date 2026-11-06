@@ -74,11 +74,6 @@ export const PlatformSummarySettingsSchema = z.object({
 });
 export type PlatformSummarySettings = z.infer<typeof PlatformSummarySettingsSchema>;
 
-export const RefreshActionSettingsSchema = z.object({
-	platform: z.enum(["all", "wigle", "wdgwars", "wardrift"]).default("all")
-});
-export type RefreshActionSettings = z.infer<typeof RefreshActionSettingsSchema>;
-
 export function parseGlobalSettings(raw: unknown): GlobalSettings {
 	const result = GlobalSettingsSchema.safeParse(raw ?? {});
 	return result.success ? result.data : GlobalSettingsSchema.parse({});
@@ -92,11 +87,6 @@ export function parseStatSettings(raw: unknown): StatActionSettings {
 export function parsePlatformSummarySettings(raw: unknown): PlatformSummarySettings {
 	const result = PlatformSummarySettingsSchema.safeParse(raw ?? {});
 	return result.success ? result.data : PlatformSummarySettingsSchema.parse({});
-}
-
-export function parseRefreshSettings(raw: unknown): RefreshActionSettings {
-	const result = RefreshActionSettingsSchema.safeParse(raw ?? {});
-	return result.success ? result.data : RefreshActionSettingsSchema.parse({});
 }
 
 export function hasWigleCredentials(settings: GlobalSettings): boolean {

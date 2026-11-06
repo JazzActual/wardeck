@@ -232,18 +232,12 @@ const requiredIcons = [
 	"imgs/actions/platform-summary/icon@2x.png",
 	"imgs/actions/platform-summary/key.png",
 	"imgs/actions/platform-summary/key@2x.png",
-	"imgs/actions/refresh/icon.png",
-	"imgs/actions/refresh/icon@2x.png",
-	"imgs/actions/refresh/key.png",
-	"imgs/actions/refresh/key@2x.png",
 	"imgs/platforms/wigle/key.png",
 	"imgs/platforms/wigle/key@2x.png",
 	"imgs/platforms/wdgwars/key.png",
 	"imgs/platforms/wdgwars/key@2x.png",
 	"imgs/platforms/wardrift/key.png",
 	"imgs/platforms/wardrift/key@2x.png",
-	"imgs/platforms/all/key.png",
-	"imgs/platforms/all/key@2x.png",
 	"imgs/platforms/bluetooth/key.png",
 	"imgs/platforms/bluetooth/key@2x.png"
 ];

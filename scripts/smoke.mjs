@@ -397,6 +397,21 @@ assert.deepEqual(planIntervalPoll(new Date(now - 60_000).toISOString(), FOUR_HOU
 	delayMs: FOUR_HOURS_MS - 60_000
 });
 
+// Cold in-memory cache must still fetch immediately even when plan defers (restart case).
+function delayForPlanColdAware(hasCachedData, plan, nextAllowedAt, nowMs) {
+	if (!hasCachedData) {
+		return Math.max(0, nextAllowedAt - nowMs);
+	}
+	const wait = plan.immediate ? 0 : plan.delayMs;
+	return Math.max(wait, nextAllowedAt - nowMs);
+}
+const deferred = planIntervalPoll(new Date(now - 60_000).toISOString(), FOUR_HOURS_MS, now);
+assert.equal(delayForPlanColdAware(false, deferred, 0, now), 0);
+assert.equal(delayForPlanColdAware(true, deferred, 0, now), deferred.delayMs);
+const cacheSrc = fs.readFileSync(path.join(repoRoot, "src/services/cache.ts"), "utf8");
+assert.ok(cacheSrc.includes("hasCachedData"), "cache missing cold-cache gate");
+assert.ok(cacheSrc.includes("delayForPlan"), "cache missing delayForPlan helper");
+
 function nextDailyLocal(timeHHMM, fromMs) {
 	const [h, m] = timeHHMM.split(":").map(Number);
 	const from = new Date(fromMs);

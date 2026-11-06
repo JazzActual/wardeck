@@ -165,6 +165,40 @@ class StatsCache {
 		}
 	}
 
+	private hasCachedData(platform: Platform): boolean {
+		if (platform === "wigle") {
+			return this.wigle.data !== null;
+		}
+		if (platform === "wdgwars") {
+			return this.wdgwars.data !== null;
+		}
+		return this.wardrift.data !== null;
+	}
+
+	private markConfigured(platform: Platform): void {
+		if (platform === "wigle" && !this.wigle.configured) {
+			this.wigle = { ...this.wigle, configured: true };
+		} else if (platform === "wdgwars" && !this.wdgwars.configured) {
+			this.wdgwars = { ...this.wdgwars, configured: true };
+		} else if (platform === "wardrift" && !this.wardrift.configured) {
+			this.wardrift = { ...this.wardrift, configured: true };
+		}
+	}
+
+	/**
+	 * Persisted last-fetch must not defer the first in-memory paint: after restart the
+	 * cache is empty even when lastFetchAt is recent, which left banners/keys stuck on
+	 * "Waiting for … data". Cold cache → fetch immediately; schedule spacing applies
+	 * only once we have displayable data.
+	 */
+	private delayForPlan(platform: Platform, plan: SchedulePlan, st: PlatformState): number {
+		if (!this.hasCachedData(platform)) {
+			return Math.max(0, st.nextAllowedAt - Date.now());
+		}
+		const wait = plan.immediate ? 0 : plan.delayMs;
+		return Math.max(wait, st.nextAllowedAt - Date.now());
+	}
+
 	private schedule(platform: Platform, settings: GlobalSettings): void {
 		const st = this.state[platform];
 		if (st.timer) {
@@ -180,8 +214,11 @@ class StatsCache {
 			return;
 		}
 
+		// Mark configured so UI doesn't flash "add credentials" while the first poll runs.
+		this.markConfigured(platform);
+
 		const plan = this.planFor(platform, settings);
-		const delay = plan.immediate ? 0 : plan.delayMs;
+		const delay = this.delayForPlan(platform, plan, st);
 		st.timer = setTimeout(() => {
 			void this.poll(platform, settings, false).finally(() => {
 				void this.rescheduleAfterPoll(platform);
@@ -200,11 +237,11 @@ class StatsCache {
 		}
 
 		const plan = this.planFor(platform, settings);
-		let wait = plan.immediate ? 0 : plan.delayMs;
-		wait = Math.max(wait, st.nextAllowedAt - Date.now());
+		let wait = this.delayForPlan(platform, plan, st);
 
 		// Light jitter on fixed intervals only — keep WiGLE on the wall-clock slot.
-		if (platform !== "wigle" && wait > 0) {
+		// Skip jitter when cold-fetching (wait≈0) so first paint stays snappy.
+		if (platform !== "wigle" && wait > 1000 && this.hasCachedData(platform)) {
 			wait = wait * (1 + (Math.random() * 2 - 1) * JITTER_RATIO);
 		}
 
@@ -215,9 +252,8 @@ class StatsCache {
 			void this.poll(platform, settings, false).finally(() => {
 				void this.rescheduleAfterPoll(platform);
 			});
-		}, Math.max(1000, wait));
+		}, Math.max(wait > 0 ? 1000 : 0, wait));
 	}
-
 	private clearPlatform(platform: Platform): void {
 		if (platform === "wigle") {
 			this.wigle = emptyEntry(false);

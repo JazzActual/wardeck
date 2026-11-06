@@ -13,7 +13,10 @@ export type IconMark =
 	| "coins"
 	| "biceps-flexed"
 	| "zap"
-	| "user-round-group";
+	| "user-round-group"
+	| "plane"
+	| "network"
+	| "award";
 
 const MARK_KEYS: Record<IconMark, string> = {
 	wifi: "imgs/marks/wifi/key",
@@ -27,7 +30,10 @@ const MARK_KEYS: Record<IconMark, string> = {
 	coins: "imgs/marks/coins/key",
 	"biceps-flexed": "imgs/marks/biceps-flexed/key",
 	zap: "imgs/marks/zap/key",
-	"user-round-group": "imgs/marks/user-round-group/key"
+	"user-round-group": "imgs/marks/user-round-group/key",
+	plane: "imgs/marks/plane/key",
+	network: "imgs/marks/network/key",
+	award: "imgs/marks/award/key"
 };
 
 export function markKeyImage(mark: IconMark): string {
@@ -41,7 +47,8 @@ export function platformKeyImage(_platform: Platform): string {
 
 /**
  * Stat key mark:
- * - WDGWars Total → radio; BLE → bluetooth
+ * - WDGWars Total → radio; BLE → bluetooth; Aircraft → plane;
+ *   Mesh → network; Badges → award
  * - WiGLE Rank / Month rank → podium
  * - Wardrift Routes → car; Streak → calendar; Threats → swords;
  *   Coin → coins; Level → biceps-flexed; To next → zap;
@@ -50,11 +57,19 @@ export function platformKeyImage(_platform: Platform): string {
  */
 export function statKeyImage(settings: StatActionSettings): string {
 	if (settings.platform === "wdgwars") {
-		if (settings.wdgwarsMetric === "total") {
-			return MARK_KEYS.radio;
-		}
-		if (settings.wdgwarsMetric === "ble") {
-			return MARK_KEYS.bluetooth;
+		switch (settings.wdgwarsMetric) {
+			case "total":
+				return MARK_KEYS.radio;
+			case "ble":
+				return MARK_KEYS.bluetooth;
+			case "aircraft":
+				return MARK_KEYS.plane;
+			case "mesh":
+				return MARK_KEYS.network;
+			case "badges":
+				return MARK_KEYS.award;
+			default:
+				break;
 		}
 	}
 	if (

@@ -182,6 +182,9 @@ Lucide-only monochrome marks (`lucide-static`, ISC), white/light on near-black k
 | `imgs/marks/biceps-flexed` | `biceps-flexed` | Wardrift Level |
 | `imgs/marks/zap` | `zap` | Wardrift To next |
 | `imgs/marks/user-round-group` | `user-round-group` | Wardrift Faction |
+| `imgs/marks/plane` | `plane` | WDGWars Aircraft |
+| `imgs/marks/network` | `network` | WDGWars Mesh |
+| `imgs/marks/award` | `award` | WDGWars Badges (count) |
 
 Category uses wifi; marketplace / summary / refresh default to combo. Regenerate with `npm run icons` (requires Pillow, cairosvg, and `npm install` for lucide-static).
 

@@ -12,7 +12,15 @@ export const WigleMetricSchema = z.enum([
 ]);
 export type WigleMetric = z.infer<typeof WigleMetricSchema>;
 
-export const WdgwarsMetricSchema = z.enum(["total", "wifi", "ble", "gang"]);
+export const WdgwarsMetricSchema = z.enum([
+	"total",
+	"wifi",
+	"ble",
+	"gang",
+	"aircraft",
+	"mesh",
+	"badges"
+]);
 export type WdgwarsMetric = z.infer<typeof WdgwarsMetricSchema>;
 
 export const WardriftMetricSchema = z.enum([
@@ -138,7 +146,10 @@ export const WDGWARS_METRIC_LABELS: Record<WdgwarsMetric, string> = {
 	total: "Total",
 	wifi: "WiFi",
 	ble: "BLE",
-	gang: "Gang"
+	gang: "Gang",
+	aircraft: "Aircraft",
+	mesh: "Mesh",
+	badges: "Badges"
 };
 
 export const WARDRIFT_METRIC_LABELS: Record<WardriftMetric, string> = {

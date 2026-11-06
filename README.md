@@ -166,15 +166,21 @@ Default polling: WiGLE **15 min**, WDGWars **5 min**, Wardrift **15 min** (tunab
 
 ## Icons
 
-Only **three** minimal monochrome marks, reused everywhere:
+Lucide-only monochrome marks (`lucide-static`, ISC), white/light on near-black keys:
 
-| Mark | Meaning |
-| --- | --- |
-| `imgs/marks/wifi` | Wi‑Fi |
-| `imgs/marks/bluetooth` | Bluetooth |
-| `imgs/marks/combo` | Wi‑Fi + Bluetooth |
+| Mark | Lucide | Meaning |
+| --- | --- | --- |
+| `imgs/marks/wifi` | `wifi` | Wi‑Fi / default stats |
+| `imgs/marks/bluetooth` | `bluetooth` | Bluetooth (WDGWars BLE) |
+| `imgs/marks/combo` | `wifi` + `bluetooth` | Wi‑Fi + Bluetooth compose |
+| `imgs/marks/podium` | `podium` | WiGLE Rank / Month rank |
+| `imgs/marks/car` | `car` | Wardrift Routes |
+| `imgs/marks/calendar` | `calendar` | Wardrift Streak |
+| `imgs/marks/swords` | `swords` | Wardrift Threats |
+| `imgs/marks/coins` | `coins` | Wardrift Coin |
+| `imgs/marks/biceps-flexed` | `biceps-flexed` | Wardrift Level |
 
-White/light on near-black keys; white-on-transparent list glyphs. Bluetooth is the standard ᛒ rune (pointed geometric B). Category uses wifi; marketplace / summary / refresh default to combo; Stat uses wifi (bluetooth when the metric is BLE). Regenerate with `npm run icons` (requires Pillow + cairosvg).
+Category uses wifi; marketplace / summary / refresh default to combo. Regenerate with `npm run icons` (requires Pillow, cairosvg, and `npm install` for lucide-static).
 
 ## Project layout
 

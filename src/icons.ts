@@ -12,7 +12,7 @@ export type IconMark =
 	| "coins"
 	| "biceps-flexed"
 	| "zap"
-	| "users-round";
+	| "user-round-group";
 
 const MARK_KEYS: Record<IconMark, string> = {
 	wifi: "imgs/marks/wifi/key",
@@ -25,7 +25,7 @@ const MARK_KEYS: Record<IconMark, string> = {
 	coins: "imgs/marks/coins/key",
 	"biceps-flexed": "imgs/marks/biceps-flexed/key",
 	zap: "imgs/marks/zap/key",
-	"users-round": "imgs/marks/users-round/key"
+	"user-round-group": "imgs/marks/user-round-group/key"
 };
 
 export function markKeyImage(mark: IconMark): string {
@@ -49,7 +49,8 @@ export function platformKeyImage(platform: Platform): string {
  * - WDGWars BLE → bluetooth
  * - WiGLE Rank / Month rank → podium
  * - Wardrift Routes → car; Streak → calendar; Threats → swords;
- *   Coin → coins; Level → biceps-flexed; To next → zap; Faction → users-round
+ *   Coin → coins; Level → biceps-flexed; To next → zap;
+ *   Faction → user-round-group
  * - else wifi
  */
 export function statKeyImage(settings: StatActionSettings): string {
@@ -77,7 +78,7 @@ export function statKeyImage(settings: StatActionSettings): string {
 			case "expToNext":
 				return MARK_KEYS.zap;
 			case "faction":
-				return MARK_KEYS["users-round"];
+				return MARK_KEYS["user-round-group"];
 			default:
 				break;
 		}

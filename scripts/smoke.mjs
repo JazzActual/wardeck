@@ -475,6 +475,24 @@ for (const rel of ["ui/stat.html", "ui/platform-summary.html"]) {
 		statHtml.includes('label="Metric"'),
 		"stat PI should use a single Metric label (filtered by platform)"
 	);
+	assert.equal(
+		statHtml.includes('value="gang"') || />\s*Gang\s*</.test(statHtml),
+		false,
+		"stat PI still offers WDGWars Gang metric"
+	);
+}
+
+{
+	const settingsSrc = fs.readFileSync(path.join(repoRoot, "src/settings.ts"), "utf8");
+	assert.ok(
+		settingsSrc.includes('value === "gang"'),
+		"settings should migrate legacy wdgwarsMetric gang → total"
+	);
+	assert.equal(
+		/WDGWARS_METRIC_LABELS[\s\S]*?gang:\s*"Gang"/.test(settingsSrc),
+		false,
+		"WDGWARS_METRIC_LABELS still lists Gang"
+	);
 }
 
 assert.equal(

@@ -7,3 +7,8 @@ node_modules/
 # Stream Deck files
 *.sdPlugin/bin
 *.sdPlugin/logs
+
+# Packaged installer (build with `npm run pack`; attach to GitHub Releases)
+dist/
+*.streamDeckPlugin
+*.streamdeckplugin

@@ -1,6 +1,7 @@
+import type { KeyMark } from "./key/render.js";
 import type { Platform, StatActionSettings } from "./settings.js";
 
-/** Lucide-backed marks bundled under imgs/marks/. */
+/** Lucide-backed marks bundled under imgs/marks/ (static fallbacks / PI). */
 export type IconMark =
 	| "wifi"
 	| "bluetooth"
@@ -47,6 +48,10 @@ export function platformKeyImage(_platform: Platform): string {
 	return MARK_KEYS.radio;
 }
 
+export function platformKeyMark(_platform: Platform): KeyMark {
+	return "radio";
+}
+
 /**
  * Stat key mark:
  * - WDGWars Total → radio; BLE → bluetooth; Aircraft → plane;
@@ -57,52 +62,57 @@ export function platformKeyImage(_platform: Platform): string {
  *   To next → zap; Faction → user-round-group
  * - WiFi-specific / else → wifi
  */
-export function statKeyImage(settings: StatActionSettings): string {
+export function resolveStatMark(settings: StatActionSettings): KeyMark {
 	if (settings.platform === "wdgwars") {
 		switch (settings.wdgwarsMetric) {
 			case "total":
-				return MARK_KEYS.radio;
+				return "radio";
 			case "ble":
-				return MARK_KEYS.bluetooth;
+				return "bluetooth";
 			case "aircraft":
-				return MARK_KEYS.plane;
+				return "plane";
 			case "mesh":
-				return MARK_KEYS.network;
+				return "network";
 			case "badges":
-				return MARK_KEYS.award;
+				return "award";
 			default:
 				break;
 		}
 	}
 	if (settings.platform === "wigle") {
 		if (settings.wigleMetric === "rank" || settings.wigleMetric === "monthRank") {
-			return MARK_KEYS.podium;
+			return "podium";
 		}
 		if (settings.wigleMetric === "cell") {
-			return MARK_KEYS["radio-tower"];
+			return "radio-tower";
 		}
 	}
 	if (settings.platform === "wardrift") {
 		switch (settings.wardriftMetric) {
 			case "networks":
-				return MARK_KEYS.radio;
+				return "radio";
 			case "routes":
-				return MARK_KEYS.car;
+				return "car";
 			case "streak":
-				return MARK_KEYS.calendar;
+				return "calendar";
 			case "threats":
-				return MARK_KEYS.swords;
+				return "swords";
 			case "currency":
-				return MARK_KEYS.coins;
+				return "coins";
 			case "level":
-				return MARK_KEYS["biceps-flexed"];
+				return "biceps-flexed";
 			case "expToNext":
-				return MARK_KEYS.zap;
+				return "zap";
 			case "faction":
-				return MARK_KEYS["user-round-group"];
+				return "user-round-group";
 			default:
 				break;
 		}
 	}
-	return MARK_KEYS.wifi;
+	return "wifi";
+}
+
+export function statKeyImage(settings: StatActionSettings): string {
+	const mark = resolveStatMark(settings);
+	return MARK_KEYS[mark as IconMark] ?? MARK_KEYS.wifi;
 }

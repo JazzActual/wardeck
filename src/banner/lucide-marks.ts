@@ -1,9 +1,10 @@
 /**
- * Lucide path bodies (lucide-static@1.69.0, ISC) for Sample A dial banners.
+ * Lucide path bodies (lucide-static@1.69.0, ISC).
  * White stroke glyphs; viewBox is always 0 0 24 24.
+ * Shared by dial banners and keypad thirds composition.
  */
 
-export type BannerLucideMark =
+export type LucideMark =
 	| "radio"
 	| "car"
 	| "swords"
@@ -15,10 +16,16 @@ export type BannerLucideMark =
 	| "bluetooth"
 	| "plane"
 	| "network"
-	| "award";
+	| "award"
+	| "biceps-flexed"
+	| "user-round-group"
+	| "radio-tower";
+
+/** @deprecated Prefer LucideMark — kept for banner call sites. */
+export type BannerLucideMark = LucideMark;
 
 /** Inner SVG markup (no root <svg>) for each mark. */
-const LUCIDE_INNER: Record<BannerLucideMark, string> = {
+const LUCIDE_INNER: Record<LucideMark, string> = {
 	radio: [
 		`<path d="M16.247 7.761a6 6 0 0 1 0 8.478"/>`,
 		`<path d="M19.075 4.933a10 10 0 0 1 0 14.134"/>`,
@@ -78,16 +85,38 @@ const LUCIDE_INNER: Record<BannerLucideMark, string> = {
 	award: [
 		`<path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/>`,
 		`<circle cx="12" cy="8" r="6"/>`
+	].join(""),
+	"biceps-flexed": [
+		`<path d="M12.409 13.017A5 5 0 0 1 22 15c0 3.866-4 7-9 7-4.077 0-8.153-.82-10.371-2.462-.426-.316-.631-.832-.62-1.362C2.118 12.723 2.627 2 10 2a3 3 0 0 1 3 3 2 2 0 0 1-2 2c-1.105 0-1.64-.444-2-1"/>`,
+		`<path d="M15 14a5 5 0 0 0-7.584 2"/>`,
+		`<path d="M9.964 6.825C8.019 7.977 9.5 13 8 15"/>`
+	].join(""),
+	"user-round-group": [
+		`<path d="M17 21a5 5 0 00-10 0"/>`,
+		`<path d="M22 10.5a3.5 3.5 0 00-5.507-2.868"/>`,
+		`<path d="M7.507 7.632A3.5 3.5 0 002 10.5"/>`,
+		`<circle cx="12" cy="13" r="3"/>`,
+		`<circle cx="18.5" cy="4.5" r="2.5"/>`,
+		`<circle cx="5.5" cy="4.5" r="2.5"/>`
+	].join(""),
+	"radio-tower": [
+		`<path d="M4.9 16.1C1 12.2 1 5.8 4.9 1.9"/>`,
+		`<path d="M7.8 4.7a6.14 6.14 0 0 0-.8 7.5"/>`,
+		`<circle cx="12" cy="9" r="2"/>`,
+		`<path d="M16.2 4.8c2 2 2.26 5.11.8 7.47"/>`,
+		`<path d="M19.1 1.9a9.96 9.96 0 0 1 0 14.1"/>`,
+		`<path d="M9.5 18h5"/>`,
+		`<path d="m8 22 4-11 4 11"/>`
 	].join("")
 };
 
 const VIEW = 24;
 
 /**
- * Paint a white Lucide glyph with top-left at (x, y) and square size `size`.
+ * Paint a Lucide glyph with top-left at (x, y) and square size `size`.
  */
 export function renderLucideGlyph(
-	mark: BannerLucideMark,
+	mark: LucideMark,
 	x: number,
 	y: number,
 	size: number,

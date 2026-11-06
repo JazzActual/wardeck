@@ -7,7 +7,8 @@ import {
 } from "@elgato/streamdeck";
 
 import { EMPTY_TITLE, formatCompactNumber } from "../formatting.js";
-import { statKeyImage } from "../icons.js";
+import { resolveStatMark } from "../icons.js";
+import { renderKeyImage } from "../key/render.js";
 import { statsCache } from "../services/cache.js";
 import { readWdgwarsMetric } from "../services/wdgwars.js";
 import { readWardriftMetric } from "../services/wardrift.js";
@@ -67,8 +68,15 @@ export class StatAction extends SingletonAction<StatActionSettings> {
 
 		const settings = parseStatSettings(rawSettings);
 		const { title, subtitle } = resolveStatDisplay(settings);
-		await action.setImage(statKeyImage(settings));
-		await action.setTitle(`${subtitle}\n${title}`);
+		await action.setImage(
+			renderKeyImage({
+				mark: resolveStatMark(settings),
+				label: subtitle,
+				value: title
+			})
+		);
+		// Label + value are painted into the key face (thirds). Clear Stream Deck title overlay.
+		await action.setTitle("");
 	}
 }
 

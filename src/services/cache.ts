@@ -6,6 +6,14 @@ import {
 	hasPlatformCredentials,
 	parseGlobalSettings
 } from "../settings.js";
+import {
+	parsePersistedFetchAt,
+	planDailyPoll,
+	planIntervalPoll,
+	WARDRIFT_POLL_MS,
+	WDGWARS_POLL_MS,
+	type SchedulePlan
+} from "../schedule.js";
 import { fetchWdgwarsMe, type WdgwarsMe } from "./wdgwars.js";
 import {
 	clearWardriftMemorySession,
@@ -45,7 +53,7 @@ class StatsCache {
 		wardrift: idleState()
 	};
 	private started = false;
-	/** Fingerprint of credential + poll settings (excludes Wardrift session token). */
+	/** Fingerprint of credential + schedule settings (excludes session token + last-fetch). */
 	private settingsFingerprint = "";
 
 	onUpdate(listener: () => void): () => void {
@@ -76,14 +84,20 @@ class StatsCache {
 
 	async refreshFromGlobalSettings(force = false): Promise<void> {
 		const settings = parseGlobalSettings(await streamDeck.settings.getGlobalSettings());
-		const fingerprint = credentialFingerprint(settings);
+		this.hydrateLastFetch(settings);
+		const fingerprint = scheduleFingerprint(settings);
 		if (!force && fingerprint === this.settingsFingerprint) {
-			// Session-token persistence must not cascade into a full re-poll.
+			// Session-token / last-fetch persistence must not cascade into a full re-poll.
+			// Still fill a cold cache (e.g. appear after restart before a timer tick).
+			await this.fetchColdConfigured(settings);
 			return;
 		}
 		this.settingsFingerprint = fingerprint;
+		// Fetch configured platforms with empty in-memory data NOW (don't wait for
+		// 4h/daily schedule or Property Inspector Test). Then arm the timers.
+		await this.fetchColdConfigured(settings);
 		for (const platform of ALL_PLATFORMS) {
-			this.schedule(platform, settings, true);
+			this.schedule(platform, settings);
 		}
 	}
 
@@ -94,6 +108,45 @@ class StatsCache {
 		await Promise.all(targets.map((p) => this.poll(p, settings, force)));
 	}
 
+	/**
+	 * Action willAppear helper: if this platform is configured but cache is empty,
+	 * force a fetch (same path PI Test uses after a successful probe).
+	 */
+	ensureFetched(platform: Platform): void {
+		void this.ensureFetchedAsync(platform);
+	}
+
+	async ensureFetchedAsync(platform: Platform): Promise<void> {
+		const settings = parseGlobalSettings(await streamDeck.settings.getGlobalSettings());
+		if (!hasPlatformCredentials(platform, settings)) {
+			this.clearPlatform(platform);
+			this.notify();
+			return;
+		}
+		this.markConfigured(platform);
+		if (this.hasCachedData(platform)) {
+			return;
+		}
+		await this.poll(platform, settings, true);
+		// Make sure a timer exists for the next interval/daily slot.
+		this.schedule(platform, settings);
+	}
+
+	/** Force-poll every configured platform that has no in-memory payload yet. */
+	private async fetchColdConfigured(settings: GlobalSettings): Promise<void> {
+		const cold = ALL_PLATFORMS.filter(
+			(platform) =>
+				hasPlatformCredentials(platform, settings) && !this.hasCachedData(platform)
+		);
+		if (cold.length === 0) {
+			return;
+		}
+		for (const platform of cold) {
+			this.markConfigured(platform);
+		}
+		this.notify();
+		await Promise.all(cold.map((platform) => this.poll(platform, settings, true)));
+	}
 	getWigle(): CacheEntry<WigleUserStats> {
 		return this.wigle;
 	}
@@ -106,7 +159,91 @@ class StatsCache {
 		return this.wardrift;
 	}
 
-	private schedule(platform: Platform, settings: GlobalSettings, immediate: boolean): void {
+	private hydrateLastFetch(settings: GlobalSettings): void {
+		const wigleAt = parsePersistedFetchAt(settings.wigleLastFetchAt);
+		if (wigleAt !== null && this.wigle.lastSuccessAt === null) {
+			this.wigle = {
+				...this.wigle,
+				lastSuccessAt: wigleAt,
+				configured: hasPlatformCredentials("wigle", settings)
+			};
+		}
+		const wdgwarsAt = parsePersistedFetchAt(settings.wdgwarsLastFetchAt);
+		if (wdgwarsAt !== null && this.wdgwars.lastSuccessAt === null) {
+			this.wdgwars = {
+				...this.wdgwars,
+				lastSuccessAt: wdgwarsAt,
+				configured: hasPlatformCredentials("wdgwars", settings)
+			};
+		}
+		const wardriftAt = parsePersistedFetchAt(settings.wardriftLastFetchAt);
+		if (wardriftAt !== null && this.wardrift.lastSuccessAt === null) {
+			this.wardrift = {
+				...this.wardrift,
+				lastSuccessAt: wardriftAt,
+				configured: hasPlatformCredentials("wardrift", settings)
+			};
+		}
+	}
+
+	private planFor(platform: Platform, settings: GlobalSettings): SchedulePlan {
+		switch (platform) {
+			case "wigle":
+				return planDailyPoll(
+					effectiveLastFetch(settings.wigleLastFetchAt, this.wigle.lastSuccessAt),
+					settings.wigleDailyTime,
+					settings.wigleTimezone
+				);
+			case "wdgwars":
+				return planIntervalPoll(
+					effectiveLastFetch(settings.wdgwarsLastFetchAt, this.wdgwars.lastSuccessAt),
+					WDGWARS_POLL_MS
+				);
+			case "wardrift":
+				return planIntervalPoll(
+					effectiveLastFetch(settings.wardriftLastFetchAt, this.wardrift.lastSuccessAt),
+					WARDRIFT_POLL_MS
+				);
+			default:
+				return { immediate: true, delayMs: 0 };
+		}
+	}
+
+	private hasCachedData(platform: Platform): boolean {
+		if (platform === "wigle") {
+			return this.wigle.data !== null;
+		}
+		if (platform === "wdgwars") {
+			return this.wdgwars.data !== null;
+		}
+		return this.wardrift.data !== null;
+	}
+
+	private markConfigured(platform: Platform): void {
+		if (platform === "wigle" && !this.wigle.configured) {
+			this.wigle = { ...this.wigle, configured: true };
+		} else if (platform === "wdgwars" && !this.wdgwars.configured) {
+			this.wdgwars = { ...this.wdgwars, configured: true };
+		} else if (platform === "wardrift" && !this.wardrift.configured) {
+			this.wardrift = { ...this.wardrift, configured: true };
+		}
+	}
+
+	/**
+	 * Persisted last-fetch must not defer the first in-memory paint: after restart the
+	 * cache is empty even when lastFetchAt is recent, which left banners/keys stuck on
+	 * "Waiting for … data". Cold cache → fetch immediately; schedule spacing applies
+	 * only once we have displayable data.
+	 */
+	private delayForPlan(platform: Platform, plan: SchedulePlan, st: PlatformState): number {
+		if (!this.hasCachedData(platform)) {
+			return Math.max(0, st.nextAllowedAt - Date.now());
+		}
+		const wait = plan.immediate ? 0 : plan.delayMs;
+		return Math.max(wait, st.nextAllowedAt - Date.now());
+	}
+
+	private schedule(platform: Platform, settings: GlobalSettings): void {
 		const st = this.state[platform];
 		if (st.timer) {
 			clearTimeout(st.timer);
@@ -121,7 +258,11 @@ class StatsCache {
 			return;
 		}
 
-		const delay = immediate ? 0 : this.pollIntervalMs(platform, settings);
+		// Mark configured so UI doesn't flash "add credentials" while the first poll runs.
+		this.markConfigured(platform);
+
+		const plan = this.planFor(platform, settings);
+		const delay = this.delayForPlan(platform, plan, st);
 		st.timer = setTimeout(() => {
 			void this.poll(platform, settings, false).finally(() => {
 				void this.rescheduleAfterPoll(platform);
@@ -132,9 +273,21 @@ class StatsCache {
 	private async rescheduleAfterPoll(platform: Platform): Promise<void> {
 		const settings = parseGlobalSettings(await streamDeck.settings.getGlobalSettings());
 		const st = this.state[platform];
-		const base = this.pollIntervalMs(platform, settings);
-		const wait = Math.max(base, st.nextAllowedAt - Date.now());
-		const jittered = wait * (1 + (Math.random() * 2 - 1) * JITTER_RATIO);
+
+		if (!hasPlatformCredentials(platform, settings)) {
+			this.clearPlatform(platform);
+			this.notify();
+			return;
+		}
+
+		const plan = this.planFor(platform, settings);
+		let wait = this.delayForPlan(platform, plan, st);
+
+		// Light jitter on fixed intervals only — keep WiGLE on the wall-clock slot.
+		// Skip jitter when cold-fetching (wait≈0) so first paint stays snappy.
+		if (platform !== "wigle" && wait > 1000 && this.hasCachedData(platform)) {
+			wait = wait * (1 + (Math.random() * 2 - 1) * JITTER_RATIO);
+		}
 
 		if (st.timer) {
 			clearTimeout(st.timer);
@@ -143,22 +296,8 @@ class StatsCache {
 			void this.poll(platform, settings, false).finally(() => {
 				void this.rescheduleAfterPoll(platform);
 			});
-		}, Math.max(1000, jittered));
+		}, Math.max(wait > 0 ? 1000 : 0, wait));
 	}
-
-	private pollIntervalMs(platform: Platform, settings: GlobalSettings): number {
-		switch (platform) {
-			case "wigle":
-				return Math.max(1, settings.wiglePollMinutes) * 60_000;
-			case "wdgwars":
-				return Math.max(1, settings.wdgwarsPollMinutes) * 60_000;
-			case "wardrift":
-				return Math.max(1, settings.wardriftPollMinutes) * 60_000;
-			default:
-				return 15 * 60_000;
-		}
-	}
-
 	private clearPlatform(platform: Platform): void {
 		if (platform === "wigle") {
 			this.wigle = emptyEntry(false);
@@ -205,18 +344,38 @@ class StatsCache {
 		return st.inFlight;
 	}
 
+	private async persistLastFetch(platform: Platform, atMs: number): Promise<void> {
+		const iso = new Date(atMs).toISOString();
+		const current = parseGlobalSettings(await streamDeck.settings.getGlobalSettings());
+		const key =
+			platform === "wigle"
+				? "wigleLastFetchAt"
+				: platform === "wdgwars"
+					? "wdgwarsLastFetchAt"
+					: "wardriftLastFetchAt";
+		if (current[key] === iso) {
+			return;
+		}
+		await streamDeck.settings.setGlobalSettings({
+			...current,
+			[key]: iso
+		});
+	}
+
 	private async pollWigle(settings: GlobalSettings, st: PlatformState): Promise<void> {
 		const result = await fetchWigleUserStats(settings);
 		if (result.ok) {
+			const at = Date.now();
 			this.wigle = {
 				data: result.data,
-				lastSuccessAt: Date.now(),
+				lastSuccessAt: at,
 				lastErrorAt: null,
 				lastError: null,
 				configured: true
 			};
 			st.backoffMs = DEFAULT_BACKOFF_MS;
 			st.nextAllowedAt = 0;
+			await this.persistLastFetch("wigle", at);
 		} else {
 			this.wigle = {
 				...this.wigle,
@@ -232,15 +391,17 @@ class StatsCache {
 	private async pollWdgwars(settings: GlobalSettings, st: PlatformState): Promise<void> {
 		const result = await fetchWdgwarsMe(settings);
 		if (result.ok) {
+			const at = Date.now();
 			this.wdgwars = {
 				data: result.data,
-				lastSuccessAt: Date.now(),
+				lastSuccessAt: at,
 				lastErrorAt: null,
 				lastError: null,
 				configured: true
 			};
 			st.backoffMs = DEFAULT_BACKOFF_MS;
 			st.nextAllowedAt = 0;
+			await this.persistLastFetch("wdgwars", at);
 		} else {
 			this.wdgwars = {
 				...this.wdgwars,
@@ -256,15 +417,17 @@ class StatsCache {
 	private async pollWardrift(settings: GlobalSettings, st: PlatformState): Promise<void> {
 		const result = await fetchWardriftDashboard(settings);
 		if (result.ok) {
+			const at = Date.now();
 			this.wardrift = {
 				data: result.data,
-				lastSuccessAt: Date.now(),
+				lastSuccessAt: at,
 				lastErrorAt: null,
 				lastError: null,
 				configured: true
 			};
 			st.backoffMs = DEFAULT_BACKOFF_MS;
 			st.nextAllowedAt = 0;
+			await this.persistLastFetch("wardrift", at);
 		} else {
 			this.wardrift = {
 				...this.wardrift,
@@ -295,8 +458,7 @@ class StatsCache {
 			return;
 		}
 
-		// Auth / client errors: don't hammer; wait a poll cycle via nextAllowedAt short bump.
-		// Match CYDesk RETRY_MS ≈ 60s on Wardrift errors.
+		// Auth / client errors: don't hammer; wait a short backoff.
 		st.nextAllowedAt = Date.now() + Math.min(st.backoffMs, 60_000);
 	}
 }
@@ -320,16 +482,23 @@ function idleState(): PlatformState {
 	};
 }
 
-function credentialFingerprint(settings: GlobalSettings): string {
+function effectiveLastFetch(persisted: string, memoryMs: number | null): string {
+	const persistedMs = parsePersistedFetchAt(persisted);
+	if (memoryMs !== null && (persistedMs === null || memoryMs >= persistedMs)) {
+		return new Date(memoryMs).toISOString();
+	}
+	return persisted;
+}
+
+function scheduleFingerprint(settings: GlobalSettings): string {
 	return [
 		settings.wigleApiName,
 		settings.wigleApiToken,
 		settings.wdgwarsApiKey,
 		settings.wardriftUsername,
 		settings.wardriftPassword,
-		settings.wiglePollMinutes,
-		settings.wdgwarsPollMinutes,
-		settings.wardriftPollMinutes
+		settings.wigleDailyTime,
+		settings.wigleTimezone
 	].join("\0");
 }
 

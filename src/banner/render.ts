@@ -1,9 +1,15 @@
 /**
  * Compose an 800×100 dial banner and slice it into four 200×100 Encoder pixmaps.
  * Stream Deck+ has no native full-strip canvas — one logical SVG, four viewBox crops.
+ *
+ * Sample A Lucide placement (approved): white glyphs in the label band —
+ * solo 15px left of label (or stacked/centered); split 12px left of each half-label.
  */
 
 import { formatCompactNumber } from "../formatting.js";
+import { renderLucideGlyph, type BannerLucideMark } from "./lucide-marks.js";
+
+export type { BannerLucideMark } from "./lucide-marks.js";
 
 export const BANNER_WIDTH = 800;
 export const BANNER_HEIGHT = 100;
@@ -16,16 +22,25 @@ export type BannerSoloColumn = {
 	kind: "solo";
 	label: string;
 	value: BannerMetricValue;
-	/** When true, label+value are centered on the column midpoint (x). */
+	/** Lucide mark painted in the label band (matches keypad set). */
+	lucide: BannerLucideMark;
+	/** When true, glyph+label+value are centered on the column midpoint. */
 	centered?: boolean;
 	/** Absolute x for left-aligned solo (ignored when centered). */
 	x?: number;
 };
 
+export type BannerSplitHalf = {
+	label: string;
+	value: BannerMetricValue;
+	x: number;
+	lucide: BannerLucideMark;
+};
+
 export type BannerSplitColumn = {
 	kind: "split";
-	left: { label: string; value: BannerMetricValue; x: number };
-	right: { label: string; value: BannerMetricValue; x: number };
+	left: BannerSplitHalf;
+	right: BannerSplitHalf;
 };
 
 export type BannerColumn = BannerSoloColumn | BannerSplitColumn;
@@ -46,8 +61,14 @@ const DIM = "#9a9aa0";
 const MUTED = "#5c5c62";
 const DIVIDER = "#2a2a30";
 const HEADER_H = 28;
-const FONT =
-	"system-ui, -apple-system, Segoe UI, sans-serif";
+const FONT = "system-ui, -apple-system, Segoe UI, sans-serif";
+
+/** Solo label-band glyph size (logical px). */
+const SOLO_GLYPH = 15;
+/** Split half-label glyph size (logical px). */
+const SPLIT_GLYPH = 12;
+/** Gap from glyph right edge to label text start. */
+const GLYPH_LABEL_GAP = 3;
 
 /** Same compact format as keypad Stat titles (e.g. 48.3k, 1.2k); 0 stays "0". */
 export function formatBannerNumber(value: BannerMetricValue): string {
@@ -113,55 +134,70 @@ function renderBannerBody(model: ComposedBannerModel): string {
 
 function renderColumn(column: BannerColumn, index: number): string {
 	if (column.kind === "split") {
-		return metricPair(
-			column.left.x,
-			column.left.label,
-			formatBannerNumber(column.left.value),
-			column.right.x,
-			column.right.label,
-			formatBannerNumber(column.right.value)
-		);
+		return metricPair(column.left, column.right);
 	}
 
 	const value = formatBannerNumber(column.value);
 	if (column.centered) {
 		const mid = index * SLICE_WIDTH + SLICE_WIDTH / 2;
-		return metricBlock(mid, column.label, value, true);
+		return metricBlockCentered(mid, column.label, value, column.lucide);
 	}
 	const x = column.x ?? index * SLICE_WIDTH + 12;
-	return metricBlock(x, column.label, value, false);
+	return metricBlockLeft(x, column.label, value, column.lucide);
 }
 
-function metricBlock(x: number, label: string, value: string, centered: boolean): string {
+/** Left-aligned solo: glyph left of label in label band; value below at x. */
+function metricBlockLeft(
+	x: number,
+	label: string,
+	value: string,
+	mark: BannerLucideMark
+): string {
 	const safeLabel = escapeXml(label);
 	const safeValue = escapeXml(value);
-	const anchor = centered ? ` text-anchor="middle"` : "";
 	const labelSize = label.length > 12 ? 9 : 10;
+	const glyphY = 33;
+	const labelX = x + SOLO_GLYPH + GLYPH_LABEL_GAP;
 	return [
-		`<text x="${x}" y="46" fill="${DIM}" font-family="${FONT}" font-size="${labelSize}" font-weight="600" letter-spacing="0.6"${anchor}>${safeLabel}</text>`,
-		`<text x="${x}" y="82" fill="${INK}" font-family="${FONT}" font-size="28" font-weight="700"${anchor}>${safeValue}</text>`
+		renderLucideGlyph(mark, x, glyphY, SOLO_GLYPH, INK),
+		`<text x="${labelX}" y="46" fill="${DIM}" font-family="${FONT}" font-size="${labelSize}" font-weight="600" letter-spacing="0.6">${safeLabel}</text>`,
+		`<text x="${x}" y="82" fill="${INK}" font-family="${FONT}" font-size="28" font-weight="700">${safeValue}</text>`
 	].join("");
 }
 
-function metricPair(
-	x1: number,
-	label1: string,
-	value1: string,
-	x2: number,
-	label2: string,
-	value2: string
+/** Centered solo: glyph stacked above micro-label, both centered; value below. */
+function metricBlockCentered(
+	mid: number,
+	label: string,
+	value: string,
+	mark: BannerLucideMark
 ): string {
-	const l1 = escapeXml(label1);
-	const v1 = escapeXml(value1);
-	const l2 = escapeXml(label2);
-	const v2 = escapeXml(value2);
-	const size1 = label1.length > 10 ? 8 : 10;
-	const size2 = label2.length > 10 ? 8 : 10;
+	const safeLabel = escapeXml(label);
+	const safeValue = escapeXml(value);
+	const labelSize = label.length > 12 ? 9 : 10;
+	const glyphX = mid - SOLO_GLYPH / 2;
+	const glyphY = 31;
 	return [
-		`<text x="${x1}" y="46" fill="${DIM}" font-family="${FONT}" font-size="${size1}" font-weight="600" letter-spacing="0.5">${l1}</text>`,
-		`<text x="${x1}" y="82" fill="${INK}" font-family="${FONT}" font-size="24" font-weight="700">${v1}</text>`,
-		`<text x="${x2}" y="46" fill="${DIM}" font-family="${FONT}" font-size="${size2}" font-weight="600" letter-spacing="0.5">${l2}</text>`,
-		`<text x="${x2}" y="82" fill="${INK}" font-family="${FONT}" font-size="24" font-weight="700">${v2}</text>`
+		renderLucideGlyph(mark, glyphX, glyphY, SOLO_GLYPH, INK),
+		`<text x="${mid}" y="52" fill="${DIM}" font-family="${FONT}" font-size="${labelSize}" font-weight="600" letter-spacing="0.6" text-anchor="middle">${safeLabel}</text>`,
+		`<text x="${mid}" y="82" fill="${INK}" font-family="${FONT}" font-size="28" font-weight="700" text-anchor="middle">${safeValue}</text>`
+	].join("");
+}
+
+function metricPair(left: BannerSplitHalf, right: BannerSplitHalf): string {
+	return splitHalf(left) + splitHalf(right);
+}
+
+function splitHalf(half: BannerSplitHalf): string {
+	const label = escapeXml(half.label);
+	const value = escapeXml(formatBannerNumber(half.value));
+	const size = half.label.length > 10 ? 8 : 10;
+	const glyphY = 34;
+	const labelX = half.x + SPLIT_GLYPH + GLYPH_LABEL_GAP;
+	return [
+		renderLucideGlyph(half.lucide, half.x, glyphY, SPLIT_GLYPH, INK),
+		`<text x="${labelX}" y="46" fill="${DIM}" font-family="${FONT}" font-size="${size}" font-weight="600" letter-spacing="0.5">${label}</text>`,
+		`<text x="${half.x}" y="82" fill="${INK}" font-family="${FONT}" font-size="24" font-weight="700">${value}</text>`
 	].join("");
 }
 

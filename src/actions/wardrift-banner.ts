@@ -11,9 +11,14 @@ import { readWardriftMetric, resolveFaction } from "../services/wardrift.js";
 /**
  * Display-only Stream Deck+ Encoder action.
  * Same action on all four dials; one 800×100 banner sliced into 200×100 pixmaps.
+ * Sample A Lucide: radio / car+swords / calendar / coins+zap.
  */
 @action({ UUID: "com.jazzactual.wardeck.wardrift-banner" })
 export class WardriftBannerAction extends DialBannerAction {
+	protected cachePlatform(): "wardrift" {
+		return "wardrift";
+	}
+
 	protected buildModel(): ComposedBannerModel {
 		return buildWardriftBannerModel();
 	}
@@ -53,23 +58,49 @@ export function buildWardriftBannerModel(): ComposedBannerModel {
 		),
 		brand: "WARDRIFT",
 		columns: [
-			{ kind: "solo", label: "NETWORKS", value: asNumber(readWardriftMetric(data, "networks")) },
+			{
+				kind: "solo",
+				label: "NETWORKS",
+				value: asNumber(readWardriftMetric(data, "networks")),
+				lucide: "radio"
+			},
 			{
 				kind: "split",
-				left: { label: "ROUTES", value: asNumber(readWardriftMetric(data, "routes")), x: 212 },
-				right: { label: "THREATS", value: asNumber(readWardriftMetric(data, "threats")), x: 308 }
+				left: {
+					label: "ROUTES",
+					value: asNumber(readWardriftMetric(data, "routes")),
+					x: 212,
+					lucide: "car"
+				},
+				right: {
+					label: "THREATS",
+					value: asNumber(readWardriftMetric(data, "threats")),
+					x: 308,
+					lucide: "swords"
+				}
 			},
 			// Locked: streak 0 must render as 0 (not hidden / not Coin fallback).
 			{
 				kind: "solo",
 				label: "STREAK",
 				value: asNumber(readWardriftMetric(data, "streak")),
+				lucide: "calendar",
 				centered: true
 			},
 			{
 				kind: "split",
-				left: { label: "COIN", value: asNumber(readWardriftMetric(data, "currency")), x: 612 },
-				right: { label: "TO NEXT", value: asNumber(readWardriftMetric(data, "expToNext")), x: 710 }
+				left: {
+					label: "COIN",
+					value: asNumber(readWardriftMetric(data, "currency")),
+					x: 612,
+					lucide: "coins"
+				},
+				right: {
+					label: "TO NEXT",
+					value: asNumber(readWardriftMetric(data, "expToNext")),
+					x: 710,
+					lucide: "zap"
+				}
 			}
 		]
 	};
@@ -81,17 +112,17 @@ function emptyModel(statusMessage: string): ComposedBannerModel {
 		brand: "WARDRIFT",
 		statusMessage,
 		columns: [
-			{ kind: "solo", label: "NETWORKS", value: null },
+			{ kind: "solo", label: "NETWORKS", value: null, lucide: "radio" },
 			{
 				kind: "split",
-				left: { label: "ROUTES", value: null, x: 212 },
-				right: { label: "THREATS", value: null, x: 308 }
+				left: { label: "ROUTES", value: null, x: 212, lucide: "car" },
+				right: { label: "THREATS", value: null, x: 308, lucide: "swords" }
 			},
-			{ kind: "solo", label: "STREAK", value: null, centered: true },
+			{ kind: "solo", label: "STREAK", value: null, lucide: "calendar", centered: true },
 			{
 				kind: "split",
-				left: { label: "COIN", value: null, x: 612 },
-				right: { label: "TO NEXT", value: null, x: 710 }
+				left: { label: "COIN", value: null, x: 612, lucide: "coins" },
+				right: { label: "TO NEXT", value: null, x: 710, lucide: "zap" }
 			}
 		]
 	};

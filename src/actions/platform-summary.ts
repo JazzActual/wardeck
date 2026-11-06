@@ -21,7 +21,9 @@ export class PlatformSummaryAction extends SingletonAction<PlatformSummarySettin
 
 	override async onWillAppear(ev: WillAppearEvent<PlatformSummarySettings>): Promise<void> {
 		this.ensureSubscription();
-		await this.render(ev.action, ev.payload.settings);
+		const settings = parsePlatformSummarySettings(ev.payload.settings);
+		statsCache.ensureFetched(settings.platform);
+		await this.render(ev.action, settings);
 	}
 
 	override async onDidReceiveSettings(
@@ -62,7 +64,7 @@ export class PlatformSummaryAction extends SingletonAction<PlatformSummarySettin
 
 		if (settings.platform === "wigle") {
 			const entry = statsCache.getWigle();
-			const primary = entry.data?.statistics?.discoveredWiFiGPS;
+			const primary = entry.data?.statistics?.discoveredWiFi;
 			await action.setTitle(
 				`WiGLE\n${entry.configured ? formatCompactNumber(primary) : EMPTY_TITLE}`
 			);

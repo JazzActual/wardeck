@@ -82,6 +82,12 @@ export function readWdgwarsMetric(
 			return data.ble ?? null;
 		case "gang":
 			return data.gang ?? null;
+		case "aircraft":
+			return data.aircraft ?? null;
+		case "mesh":
+			return data.mesh ?? null;
+		case "badges":
+			return Array.isArray(data.badges) ? data.badges.length : null;
 		default:
 			return null;
 	}

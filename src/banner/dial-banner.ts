@@ -17,8 +17,12 @@ export abstract class DialBannerAction extends SingletonAction {
 
 	protected abstract buildModel(): ComposedBannerModel;
 
+	/** Platform whose cache backs this banner (cold-fetch on appear). */
+	protected abstract cachePlatform(): "wigle" | "wdgwars" | "wardrift";
+
 	override async onWillAppear(_ev: WillAppearEvent): Promise<void> {
 		this.ensureSubscription();
+		statsCache.ensureFetched(this.cachePlatform());
 		await this.enqueueRender();
 	}
 

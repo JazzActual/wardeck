@@ -10,10 +10,15 @@ import { readWigleMetric, type WigleUserStats } from "../services/wigle.js";
 
 /**
  * WiGLE Sample A composed dial banner (display-only).
- * Cols: WIFI GPS | RANK + MONTHLY RANK | MONTHLY EVENTS | BT GPS
+ * Cols: WIFI | RANK + MONTHLY RANK | MONTHLY EVENTS | BT
+ * Lucide: wifi / podium+podium / calendar / bluetooth
  */
 @action({ UUID: "com.jazzactual.wardeck.wigle-banner" })
 export class WigleBannerAction extends DialBannerAction {
+	protected cachePlatform(): "wigle" {
+		return "wigle";
+	}
+
 	protected buildModel(): ComposedBannerModel {
 		return buildWigleBannerModel();
 	}
@@ -37,23 +42,35 @@ export function buildWigleBannerModel(): ComposedBannerModel {
 		identity: buildIdentityLine([truncateName(username)], "WiGLE"),
 		brand: "WIGLE",
 		columns: [
-			{ kind: "solo", label: "WIFI GPS", value: asNumber(readWigleMetric(data, "wifiGps")) },
+			{
+				kind: "solo",
+				label: "WIFI",
+				value: asNumber(readWigleMetric(data, "wifiAll")),
+				lucide: "wifi"
+			},
 			{
 				kind: "split",
-				left: { label: "RANK", value: asNumber(readWigleMetric(data, "rank")), x: 212 },
+				left: {
+					label: "RANK",
+					value: asNumber(readWigleMetric(data, "rank")),
+					x: 212,
+					lucide: "podium"
+				},
 				right: {
 					label: "MONTHLY RANK",
 					value: asNumber(readWigleMetric(data, "monthRank")),
-					x: 300
+					x: 300,
+					lucide: "podium"
 				}
 			},
 			{
 				kind: "solo",
 				label: "MONTHLY EVENTS",
 				value: asNumber(readWigleMetric(data, "monthEvents")),
+				lucide: "calendar",
 				x: 412
 			},
-			{ kind: "solo", label: "BT GPS", value: readBtGps(data), x: 612 }
+			{ kind: "solo", label: "BT", value: readBt(data), lucide: "bluetooth", x: 612 }
 		]
 	};
 }
@@ -64,20 +81,20 @@ function emptyModel(statusMessage: string): ComposedBannerModel {
 		brand: "WIGLE",
 		statusMessage,
 		columns: [
-			{ kind: "solo", label: "WIFI GPS", value: null },
+			{ kind: "solo", label: "WIFI", value: null, lucide: "wifi" },
 			{
 				kind: "split",
-				left: { label: "RANK", value: null, x: 212 },
-				right: { label: "MONTHLY RANK", value: null, x: 300 }
+				left: { label: "RANK", value: null, x: 212, lucide: "podium" },
+				right: { label: "MONTHLY RANK", value: null, x: 300, lucide: "podium" }
 			},
-			{ kind: "solo", label: "MONTHLY EVENTS", value: null, x: 412 },
-			{ kind: "solo", label: "BT GPS", value: null, x: 612 }
+			{ kind: "solo", label: "MONTHLY EVENTS", value: null, lucide: "calendar", x: 412 },
+			{ kind: "solo", label: "BT", value: null, lucide: "bluetooth", x: 612 }
 		]
 	};
 }
 
-function readBtGps(data: WigleUserStats): number | null {
-	const value = data.statistics?.discoveredBtGPS;
+function readBt(data: WigleUserStats): number | null {
+	const value = data.statistics?.discoveredBt;
 	return typeof value === "number" && !Number.isNaN(value) ? value : null;
 }
 

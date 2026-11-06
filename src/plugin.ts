@@ -1,7 +1,6 @@
 import streamDeck from "@elgato/streamdeck";
 
 import { PlatformSummaryAction } from "./actions/platform-summary";
-import { RefreshAction } from "./actions/refresh";
 import { StatAction } from "./actions/stat";
 import { WardriftBannerAction } from "./actions/wardrift-banner";
 import { WdgwarsBannerAction } from "./actions/wdgwars-banner";
@@ -16,7 +15,6 @@ streamDeck.logger.setLevel("info");
 
 streamDeck.actions.registerAction(new StatAction());
 streamDeck.actions.registerAction(new PlatformSummaryAction());
-streamDeck.actions.registerAction(new RefreshAction());
 streamDeck.actions.registerAction(new WardriftBannerAction());
 streamDeck.actions.registerAction(new WigleBannerAction());
 streamDeck.actions.registerAction(new WdgwarsBannerAction());
@@ -87,6 +85,5 @@ streamDeck.ui.onSendToPlugin(async (ev) => {
 	}
 });
 
-void statsCache.start();
-
-streamDeck.connect();
+// Connect first so global settings (credentials) are available, then load + fetch.
+void streamDeck.connect().then(() => statsCache.start());

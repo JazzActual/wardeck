@@ -30,13 +30,25 @@ assert.equal(formatCompactNumber(42), "42");
 assert.equal(formatCompactNumber(1200), "1.2k");
 assert.equal(formatCompactNumber(1_000_000), "1M");
 
-const pollMinutes = (fallback) =>
-	z.preprocess((value) => {
-		if (value === "" || value === null || value === undefined) {
-			return fallback;
-		}
-		return value;
-	}, z.coerce.number().min(1).max(1440).default(fallback));
+const dailyTimeSetting = z.preprocess((value) => {
+	if (value === "" || value === null || value === undefined) {
+		return "06:00";
+	}
+	const m = /^(\d{1,2}):(\d{2})$/.exec(String(value).trim());
+	if (!m) {
+		return "06:00";
+	}
+	const hour = Math.min(23, Math.max(0, Number(m[1])));
+	const minute = Math.min(59, Math.max(0, Number(m[2])));
+	return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}, z.string().default("06:00"));
+
+const timezoneSetting = z.preprocess((value) => {
+	if (value === "" || value === null || value === undefined) {
+		return "local";
+	}
+	return String(value).trim() || "local";
+}, z.string().default("local"));
 
 const GlobalSettingsSchema = z.object({
 	wigleApiName: z.string().default(""),
@@ -46,9 +58,11 @@ const GlobalSettingsSchema = z.object({
 	wardriftPassword: z.string().default(""),
 	wardriftSessionToken: z.string().default(""),
 	wardriftSessionExpiresAt: z.string().default(""),
-	wiglePollMinutes: pollMinutes(15),
-	wdgwarsPollMinutes: pollMinutes(5),
-	wardriftPollMinutes: pollMinutes(15)
+	wigleDailyTime: dailyTimeSetting,
+	wigleTimezone: timezoneSetting,
+	wigleLastFetchAt: z.string().default(""),
+	wdgwarsLastFetchAt: z.string().default(""),
+	wardriftLastFetchAt: z.string().default("")
 });
 
 const empty = GlobalSettingsSchema.parse({});
@@ -56,11 +70,12 @@ assert.equal(empty.wigleApiName, "");
 assert.equal(empty.wardriftUsername, "");
 assert.equal(empty.wardriftPassword, "");
 assert.equal(empty.wardriftSessionToken, "");
-assert.equal(empty.wiglePollMinutes, 15);
-assert.equal(empty.wdgwarsPollMinutes, 5);
-assert.equal(empty.wardriftPollMinutes, 15);
-assert.equal(GlobalSettingsSchema.parse({ wiglePollMinutes: "" }).wiglePollMinutes, 15);
-assert.equal(GlobalSettingsSchema.parse({ wardriftPollMinutes: "" }).wardriftPollMinutes, 15);
+assert.equal(empty.wigleDailyTime, "06:00");
+assert.equal(empty.wigleTimezone, "local");
+assert.equal(empty.wigleLastFetchAt, "");
+assert.equal(GlobalSettingsSchema.parse({ wigleDailyTime: "" }).wigleDailyTime, "06:00");
+assert.equal(GlobalSettingsSchema.parse({ wigleDailyTime: "9:30" }).wigleDailyTime, "09:30");
+assert.equal(GlobalSettingsSchema.parse({ wigleTimezone: "" }).wigleTimezone, "local");
 
 const PlatformSchema = z.enum(["wigle", "wdgwars", "wardrift"]);
 assert.deepEqual(PlatformSchema.options, ["wigle", "wdgwars", "wardrift"]);
@@ -168,6 +183,58 @@ const requiredIcons = [
 	"imgs/marks/combo/icon@2x.png",
 	"imgs/marks/combo/key.png",
 	"imgs/marks/combo/key@2x.png",
+	"imgs/marks/radio/icon.png",
+	"imgs/marks/radio/icon@2x.png",
+	"imgs/marks/radio/key.png",
+	"imgs/marks/radio/key@2x.png",
+	"imgs/marks/podium/icon.png",
+	"imgs/marks/podium/icon@2x.png",
+	"imgs/marks/podium/key.png",
+	"imgs/marks/podium/key@2x.png",
+	"imgs/marks/car/icon.png",
+	"imgs/marks/car/icon@2x.png",
+	"imgs/marks/car/key.png",
+	"imgs/marks/car/key@2x.png",
+	"imgs/marks/calendar/icon.png",
+	"imgs/marks/calendar/icon@2x.png",
+	"imgs/marks/calendar/key.png",
+	"imgs/marks/calendar/key@2x.png",
+	"imgs/marks/swords/icon.png",
+	"imgs/marks/swords/icon@2x.png",
+	"imgs/marks/swords/key.png",
+	"imgs/marks/swords/key@2x.png",
+	"imgs/marks/coins/icon.png",
+	"imgs/marks/coins/icon@2x.png",
+	"imgs/marks/coins/key.png",
+	"imgs/marks/coins/key@2x.png",
+	"imgs/marks/biceps-flexed/icon.png",
+	"imgs/marks/biceps-flexed/icon@2x.png",
+	"imgs/marks/biceps-flexed/key.png",
+	"imgs/marks/biceps-flexed/key@2x.png",
+	"imgs/marks/zap/icon.png",
+	"imgs/marks/zap/icon@2x.png",
+	"imgs/marks/zap/key.png",
+	"imgs/marks/zap/key@2x.png",
+	"imgs/marks/user-round-group/icon.png",
+	"imgs/marks/user-round-group/icon@2x.png",
+	"imgs/marks/user-round-group/key.png",
+	"imgs/marks/user-round-group/key@2x.png",
+	"imgs/marks/plane/icon.png",
+	"imgs/marks/plane/icon@2x.png",
+	"imgs/marks/plane/key.png",
+	"imgs/marks/plane/key@2x.png",
+	"imgs/marks/network/icon.png",
+	"imgs/marks/network/icon@2x.png",
+	"imgs/marks/network/key.png",
+	"imgs/marks/network/key@2x.png",
+	"imgs/marks/award/icon.png",
+	"imgs/marks/award/icon@2x.png",
+	"imgs/marks/award/key.png",
+	"imgs/marks/award/key@2x.png",
+	"imgs/marks/radio-tower/icon.png",
+	"imgs/marks/radio-tower/icon@2x.png",
+	"imgs/marks/radio-tower/key.png",
+	"imgs/marks/radio-tower/key@2x.png",
 	"imgs/plugin/category-icon.png",
 	"imgs/plugin/category-icon@2x.png",
 	"imgs/plugin/marketplace.png",
@@ -180,18 +247,12 @@ const requiredIcons = [
 	"imgs/actions/platform-summary/icon@2x.png",
 	"imgs/actions/platform-summary/key.png",
 	"imgs/actions/platform-summary/key@2x.png",
-	"imgs/actions/refresh/icon.png",
-	"imgs/actions/refresh/icon@2x.png",
-	"imgs/actions/refresh/key.png",
-	"imgs/actions/refresh/key@2x.png",
 	"imgs/platforms/wigle/key.png",
 	"imgs/platforms/wigle/key@2x.png",
 	"imgs/platforms/wdgwars/key.png",
 	"imgs/platforms/wdgwars/key@2x.png",
 	"imgs/platforms/wardrift/key.png",
 	"imgs/platforms/wardrift/key@2x.png",
-	"imgs/platforms/all/key.png",
-	"imgs/platforms/all/key@2x.png",
 	"imgs/platforms/bluetooth/key.png",
 	"imgs/platforms/bluetooth/key@2x.png"
 ];
@@ -258,5 +319,151 @@ assert.equal(formatCompactNumber(48291), "48.3k");
 assert.equal("MONTHLY RANK".includes("MO "), false);
 assert.ok("MONTHLY RANK".startsWith("MONTHLY"));
 assert.ok("MONTHLY EVENTS".startsWith("MONTHLY"));
+
+// Sample A Lucide label-band glyphs (approved preview maps).
+const repoRoot = path.resolve(pluginRoot, "..");
+const lucideMarksSrc = fs.readFileSync(path.join(repoRoot, "src/banner/lucide-marks.ts"), "utf8");
+for (const mark of [
+	"radio",
+	"car",
+	"swords",
+	"calendar",
+	"coins",
+	"zap",
+	"wifi",
+	"podium",
+	"bluetooth",
+	"plane",
+	"network",
+	"award"
+]) {
+	assert.ok(lucideMarksSrc.includes(`${mark}:`), `lucide-marks missing ${mark}`);
+}
+const renderSrc = fs.readFileSync(path.join(repoRoot, "src/banner/render.ts"), "utf8");
+assert.ok(renderSrc.includes("renderLucideGlyph"), "render missing Lucide painter");
+assert.ok(renderSrc.includes("SOLO_GLYPH = 15"), "solo glyph size drift");
+assert.ok(renderSrc.includes("SPLIT_GLYPH = 12"), "split glyph size drift");
+
+function assertBannerLucide(rel, needles) {
+	const src = fs.readFileSync(path.join(repoRoot, rel), "utf8");
+	for (const needle of needles) {
+		assert.ok(src.includes(needle), `${rel} missing ${needle}`);
+	}
+}
+assertBannerLucide("src/actions/wardrift-banner.ts", [
+	'lucide: "radio"',
+	'lucide: "car"',
+	'lucide: "swords"',
+	'lucide: "calendar"',
+	'lucide: "coins"',
+	'lucide: "zap"'
+]);
+assertBannerLucide("src/actions/wigle-banner.ts", [
+	'lucide: "wifi"',
+	'lucide: "podium"',
+	'lucide: "calendar"',
+	'lucide: "bluetooth"'
+]);
+assertBannerLucide("src/actions/wdgwars-banner.ts", [
+	'lucide: "radio"',
+	'lucide: "wifi"',
+	'lucide: "bluetooth"',
+	'lucide: "plane"',
+	'lucide: "network"',
+	'lucide: "award"'
+]);
+
+// Auto-update schedules: 4h interval plan + daily WiGLE plan.
+const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
+function planIntervalPoll(lastFetchAt, intervalMs, nowMs) {
+	const last = lastFetchAt ? Date.parse(lastFetchAt) : NaN;
+	if (!Number.isFinite(last)) {
+		return { immediate: true, delayMs: 0 };
+	}
+	const elapsed = nowMs - last;
+	if (elapsed >= intervalMs) {
+		return { immediate: true, delayMs: 0 };
+	}
+	return { immediate: false, delayMs: Math.max(1000, intervalMs - elapsed) };
+}
+const now = Date.UTC(2026, 10, 6, 12, 0, 0);
+assert.deepEqual(planIntervalPoll("", FOUR_HOURS_MS, now), { immediate: true, delayMs: 0 });
+assert.deepEqual(planIntervalPoll(new Date(now - FOUR_HOURS_MS - 1).toISOString(), FOUR_HOURS_MS, now), {
+	immediate: true,
+	delayMs: 0
+});
+assert.deepEqual(planIntervalPoll(new Date(now - 60_000).toISOString(), FOUR_HOURS_MS, now), {
+	immediate: false,
+	delayMs: FOUR_HOURS_MS - 60_000
+});
+
+// Cold in-memory cache must still fetch immediately even when plan defers (restart case).
+function delayForPlanColdAware(hasCachedData, plan, nextAllowedAt, nowMs) {
+	if (!hasCachedData) {
+		return Math.max(0, nextAllowedAt - nowMs);
+	}
+	const wait = plan.immediate ? 0 : plan.delayMs;
+	return Math.max(wait, nextAllowedAt - nowMs);
+}
+const deferred = planIntervalPoll(new Date(now - 60_000).toISOString(), FOUR_HOURS_MS, now);
+assert.equal(delayForPlanColdAware(false, deferred, 0, now), 0);
+assert.equal(delayForPlanColdAware(true, deferred, 0, now), deferred.delayMs);
+const cacheSrc = fs.readFileSync(path.join(repoRoot, "src/services/cache.ts"), "utf8");
+assert.ok(cacheSrc.includes("hasCachedData"), "cache missing cold-cache gate");
+assert.ok(cacheSrc.includes("delayForPlan"), "cache missing delayForPlan helper");
+assert.ok(cacheSrc.includes("fetchColdConfigured"), "cache missing startup cold fetch");
+assert.ok(cacheSrc.includes("ensureFetched"), "cache missing appear ensureFetched");
+const pluginSrc = fs.readFileSync(path.join(repoRoot, "src/plugin.ts"), "utf8");
+assert.ok(
+	pluginSrc.includes("connect()") && pluginSrc.includes("statsCache.start()"),
+	"plugin must start cache after connect"
+);
+assert.ok(
+	fs.readFileSync(path.join(repoRoot, "src/banner/dial-banner.ts"), "utf8").includes("ensureFetched"),
+	"banner appear must ensureFetched"
+);
+assert.ok(
+	fs.readFileSync(path.join(repoRoot, "src/actions/stat.ts"), "utf8").includes("ensureFetched"),
+	"stat appear must ensureFetched"
+);
+
+function nextDailyLocal(timeHHMM, fromMs) {
+	const [h, m] = timeHHMM.split(":").map(Number);
+	const from = new Date(fromMs);
+	const target = new Date(from.getFullYear(), from.getMonth(), from.getDate(), h, m, 0, 0);
+	if (target.getTime() <= fromMs) {
+		target.setDate(target.getDate() + 1);
+	}
+	return target.getTime();
+}
+function planDailyPollLocal(lastFetchAt, timeHHMM, nowMs) {
+	const last = lastFetchAt ? Date.parse(lastFetchAt) : NaN;
+	const next = nextDailyLocal(timeHHMM, nowMs);
+	const recent = next - 24 * 60 * 60 * 1000;
+	if (!Number.isFinite(last) || last < recent - 5_000) {
+		return { immediate: true, delayMs: 0 };
+	}
+	return { immediate: false, delayMs: Math.max(1000, next - nowMs) };
+}
+const morning = new Date(2026, 10, 6, 7, 0, 0).getTime(); // after 06:00 local
+assert.equal(planDailyPollLocal("", "06:00", morning).immediate, true);
+assert.equal(
+	planDailyPollLocal(new Date(morning - 30 * 60_000).toISOString(), "06:00", morning).immediate,
+	false
+);
+
+for (const rel of ["ui/stat.html", "ui/platform-summary.html"]) {
+	const html = fs.readFileSync(path.join(pluginRoot, rel), "utf8");
+	assert.ok(html.includes('setting="wigleDailyTime"'), `${rel} missing wigleDailyTime`);
+	assert.ok(html.includes('setting="wigleTimezone"'), `${rel} missing wigleTimezone`);
+	assert.equal(html.includes("wiglePollMinutes"), false, `${rel} still has poll minutes`);
+	assert.equal(html.includes("Refresh"), false, `${rel} still mentions Refresh`);
+}
+
+assert.equal(
+	manifest.Actions.some((a) => String(a.UUID).includes("refresh")),
+	false,
+	"manifest still has Refresh action"
+);
 
 console.log("smoke ok");

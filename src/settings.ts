@@ -1,18 +1,26 @@
 import { z } from "zod";
 
+import { formatDailyTime, parseDailyTime } from "./schedule.js";
+
 export const PlatformSchema = z.enum(["wigle", "wdgwars", "wardrift"]);
 export type Platform = z.infer<typeof PlatformSchema>;
 
-export const WigleMetricSchema = z.enum([
-	"wifiGps",
-	"wifiAll",
-	"rank",
-	"monthRank",
-	"monthEvents"
-]);
+/** WiGLE keypad metrics — no GPS-labeled options (wifiGps migrates → wifiAll). */
+export const WigleMetricSchema = z.preprocess(
+	(value) => (value === "wifiGps" ? "wifiAll" : value),
+	z.enum(["wifiAll", "rank", "monthRank", "monthEvents", "cell"])
+);
 export type WigleMetric = z.infer<typeof WigleMetricSchema>;
 
-export const WdgwarsMetricSchema = z.enum(["total", "wifi", "ble", "gang"]);
+export const WdgwarsMetricSchema = z.enum([
+	"total",
+	"wifi",
+	"ble",
+	"gang",
+	"aircraft",
+	"mesh",
+	"badges"
+]);
 export type WdgwarsMetric = z.infer<typeof WdgwarsMetricSchema>;
 
 export const WardriftMetricSchema = z.enum([
@@ -28,13 +36,19 @@ export const WardriftMetricSchema = z.enum([
 ]);
 export type WardriftMetric = z.infer<typeof WardriftMetricSchema>;
 
-const pollMinutes = (fallback: number) =>
-	z.preprocess((value) => {
-		if (value === "" || value === null || value === undefined) {
-			return fallback;
-		}
-		return value;
-	}, z.coerce.number().min(1).max(1440).default(fallback));
+const dailyTimeSetting = z.preprocess((value) => {
+	if (value === "" || value === null || value === undefined) {
+		return "06:00";
+	}
+	return formatDailyTime(parseDailyTime(String(value)));
+}, z.string().default("06:00"));
+
+const timezoneSetting = z.preprocess((value) => {
+	if (value === "" || value === null || value === undefined) {
+		return "local";
+	}
+	return String(value).trim() || "local";
+}, z.string().default("local"));
 
 export const GlobalSettingsSchema = z.object({
 	wigleApiName: z.string().default(""),
@@ -46,18 +60,25 @@ export const GlobalSettingsSchema = z.object({
 	wardriftSessionToken: z.string().default(""),
 	/** ISO expiry from Wardrift sign-in; empty if unknown. */
 	wardriftSessionExpiresAt: z.string().default(""),
-	/** WiGLE poll interval in minutes (default 15). */
-	wiglePollMinutes: pollMinutes(15),
-	/** WDGWars poll interval in minutes (default 5). */
-	wdgwarsPollMinutes: pollMinutes(5),
-	/** Wardrift poll interval in minutes (default 15, matches CYDesk). */
-	wardriftPollMinutes: pollMinutes(15)
+	/** WiGLE daily auto-fetch wall-clock time (`HH:mm`, 24h). */
+	wigleDailyTime: dailyTimeSetting,
+	/**
+	 * IANA timezone for WiGLE daily fetch, or `local` for the host clock.
+	 * Invalid values fall back to local at schedule time.
+	 */
+	wigleTimezone: timezoneSetting,
+	/** ISO timestamp of last successful WiGLE fetch (persisted). */
+	wigleLastFetchAt: z.string().default(""),
+	/** ISO timestamp of last successful WDGWars fetch (persisted). */
+	wdgwarsLastFetchAt: z.string().default(""),
+	/** ISO timestamp of last successful Wardrift fetch (persisted). */
+	wardriftLastFetchAt: z.string().default("")
 });
 export type GlobalSettings = z.infer<typeof GlobalSettingsSchema>;
 
 export const StatActionSettingsSchema = z.object({
 	platform: PlatformSchema.default("wigle"),
-	wigleMetric: WigleMetricSchema.default("wifiGps"),
+	wigleMetric: WigleMetricSchema.default("wifiAll"),
 	wdgwarsMetric: WdgwarsMetricSchema.default("total"),
 	wardriftMetric: WardriftMetricSchema.default("networks")
 });
@@ -67,11 +88,6 @@ export const PlatformSummarySettingsSchema = z.object({
 	platform: PlatformSchema.default("wigle")
 });
 export type PlatformSummarySettings = z.infer<typeof PlatformSummarySettingsSchema>;
-
-export const RefreshActionSettingsSchema = z.object({
-	platform: z.enum(["all", "wigle", "wdgwars", "wardrift"]).default("all")
-});
-export type RefreshActionSettings = z.infer<typeof RefreshActionSettingsSchema>;
 
 export function parseGlobalSettings(raw: unknown): GlobalSettings {
 	const result = GlobalSettingsSchema.safeParse(raw ?? {});
@@ -86,11 +102,6 @@ export function parseStatSettings(raw: unknown): StatActionSettings {
 export function parsePlatformSummarySettings(raw: unknown): PlatformSummarySettings {
 	const result = PlatformSummarySettingsSchema.safeParse(raw ?? {});
 	return result.success ? result.data : PlatformSummarySettingsSchema.parse({});
-}
-
-export function parseRefreshSettings(raw: unknown): RefreshActionSettings {
-	const result = RefreshActionSettingsSchema.safeParse(raw ?? {});
-	return result.success ? result.data : RefreshActionSettingsSchema.parse({});
 }
 
 export function hasWigleCredentials(settings: GlobalSettings): boolean {
@@ -127,18 +138,21 @@ export const PLATFORM_URLS: Record<Platform, string> = {
 export const ALL_PLATFORMS: Platform[] = ["wigle", "wdgwars", "wardrift"];
 
 export const WIGLE_METRIC_LABELS: Record<WigleMetric, string> = {
-	wifiGps: "WiFi GPS",
 	wifiAll: "WiFi",
 	rank: "Rank",
 	monthRank: "Mo Rank",
-	monthEvents: "Mo Events"
+	monthEvents: "Mo Events",
+	cell: "Cell"
 };
 
 export const WDGWARS_METRIC_LABELS: Record<WdgwarsMetric, string> = {
 	total: "Total",
 	wifi: "WiFi",
 	ble: "BLE",
-	gang: "Gang"
+	gang: "Gang",
+	aircraft: "Aircraft",
+	mesh: "Mesh",
+	badges: "Badges"
 };
 
 export const WARDRIFT_METRIC_LABELS: Record<WardriftMetric, string> = {
@@ -152,3 +166,18 @@ export const WARDRIFT_METRIC_LABELS: Record<WardriftMetric, string> = {
 	name: "Name",
 	faction: "Faction"
 };
+
+/** Common IANA zones for the WiGLE daily-time PI select (plus `local`). */
+export const WIGLE_TIMEZONE_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
+	{ value: "local", label: "Local (host clock)" },
+	{ value: "UTC", label: "UTC" },
+	{ value: "America/Los_Angeles", label: "America/Los_Angeles" },
+	{ value: "America/Denver", label: "America/Denver" },
+	{ value: "America/Chicago", label: "America/Chicago" },
+	{ value: "America/New_York", label: "America/New_York" },
+	{ value: "Europe/London", label: "Europe/London" },
+	{ value: "Europe/Berlin", label: "Europe/Berlin" },
+	{ value: "Europe/Warsaw", label: "Europe/Warsaw" },
+	{ value: "Asia/Tokyo", label: "Asia/Tokyo" },
+	{ value: "Australia/Sydney", label: "Australia/Sydney" }
+];

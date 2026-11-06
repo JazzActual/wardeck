@@ -40,69 +40,7 @@ For iterative development (rebuild + restart on change):
 npm run watch
 ```
 
-After linking, open Stream Deck → add Wardeck actions from the category list → configure credentials in the Property Inspector.
-
-## Bundled Stream Deck+ profile
-
-The plugin ships a pre-laid **Wardeck** profile for **Stream Deck+** (8 LCD keys + dials). It is registered in the plugin manifest (`DeviceType` 7, `AutoInstall: true`) and contains **no credentials** — paste WiGLE / WDGWars / Wardrift secrets in the Property Inspector after install.
-
-### Default layout
-
-**Page 1 — WiGLE + WDGWars**
-
-| WiGLE (summary) | WiFi | Rank | Cell |
-| --- | --- | --- | --- |
-| WDGWars (summary) | Total | WiFi | Next page → |
-
-**Page 2 — Wardrift (+ WDGWars BLE)**
-
-| ← Previous | Wardrift (summary) | Networks | Routes |
-| --- | --- | --- | --- |
-| WDGWars BLE | Streak | *(free)* | *(free)* |
-
-**Dials:** composed 800×100 banners sliced into four 200×100 Encoder pixmaps (display-only — no rotate / press / touch handlers).
-
-| Page | Default dial action |
-| --- | --- |
-| Page 1 | **WiGLE Banner** ×4 (WIFI · RANK+MONTHLY RANK · MONTHLY EVENTS · BT) |
-| Page 2 | **Wardrift Banner** ×4 (Networks · Routes+Threats · Streak · Coin+To next) |
-
-**WDGWars Banner** (TOTAL · WIFI+BLE · AIRCRAFT · MESH+BADGES) is available in the action list — assign it to all four dials when you want that strip (e.g. swap page 1). Keys use the plugin’s shared monochrome marks (`imgs/marks/*`).
-
-### Assign a composed banner to all four Plus dials
-
-The strip only reads as one banner when **every** dial on the page uses the **same** banner action.
-
-1. In Stream Deck, select your **Stream Deck+** device and the **Wardeck** profile (or any custom profile).
-2. Open the **Wardeck** category in the action list.
-3. Drag **WiGLE Banner**, **WDGWars Banner**, or **Wardrift Banner** onto dial 1, then dial 2, dial 3, and dial 4.
-4. Leave dial settings empty — there is no Property Inspector on banners; credentials stay on any Keypad action’s global settings.
-5. Mixing actions (or leaving a dial empty) breaks the full-strip illusion.
-
-Bundled Plus profile defaults: page 1 → WiGLE Banner ×4, page 2 → Wardrift Banner ×4. Existing imported profiles keep prior dial bindings until you reassign or rebuild/re-import.
-
-### Install / import
-
-**A. Via plugin install (recommended after sideload)**
-
-1. Build and link the plugin (`npm run build` → `npm run link` → `streamdeck restart com.jazzactual.wardeck`).
-2. When Stream Deck first loads the plugin, accept the prompt to install the bundled **Wardeck** profile (or it appears under Profiles for Stream Deck+).
-3. Select the **Stream Deck+** device and switch to the **Wardeck** profile.
-4. Click any Wardeck key → Property Inspector → fill **global** credentials (WiGLE API Name/Token, WDGWars API key, and/or Wardrift username/password). Test each platform. Keys show `—` until credentials work.
-
-**B. Manual double-click import**
-
-1. Ensure the plugin is already linked/loaded (actions must resolve by UUID).
-2. Open `com.jazzactual.wardeck.sdPlugin/profiles/Wardeck.streamDeckProfile` (double-click, or drag onto Stream Deck).
-3. Confirm import for Stream Deck+, then configure credentials as above.
-
-**C. Rebuild the profile archive (maintainers)**
-
-```bash
-npm run profile:plus
-```
-
-This regenerates `com.jazzactual.wardeck.sdPlugin/profiles/Wardeck.streamDeckProfile` from `scripts/generate-plus-profile.mjs`.
+After linking, open Stream Deck → add Wardeck actions from the category list → configure credentials in the Property Inspector. There is **no bundled Stream Deck profile** — lay out keys and dials yourself (or keep your own profile).
 
 ### Manual symlink (if `streamdeck link` is unavailable)
 
@@ -163,6 +101,15 @@ Without credentials, keys show `—` and the plugin still runs (no crash). CI / 
 
 Auto-update: WDGWars + Wardrift every **4 hours**; WiGLE once per day at a PI-configured time of day + timezone (`local` or IANA). Last successful fetch timestamps are persisted in global settings. Stat press still refreshes that platform immediately. Cache + exponential backoff on `429` / `5xx`.
 
+### Stream Deck+ dial banners
+
+Composed 800×100 banners are sliced into four 200×100 Encoder pixmaps (display-only — no rotate / press / touch). The strip only reads as one banner when **every** dial on the page uses the **same** banner action:
+
+1. Select your Stream Deck+ device and any profile.
+2. Drag **WiGLE Banner**, **WDGWars Banner**, or **Wardrift Banner** onto dials 1–4.
+3. Leave dial settings empty — banners have no Property Inspector; credentials stay on keypad actions.
+4. Mixing actions (or leaving a dial empty) breaks the full-strip illusion.
+
 ## Icons
 
 Lucide-only monochrome marks (`lucide-static`, ISC), white/light on near-black keys:
@@ -191,9 +138,8 @@ Category uses wifi; marketplace uses combo compose; platform summaries use radio
 ## Project layout
 
 ```
-com.jazzactual.wardeck.sdPlugin/   # packaged plugin (manifest, UI, imgs, layouts, profiles, built bin/)
+com.jazzactual.wardeck.sdPlugin/   # packaged plugin (manifest, UI, imgs, layouts, built bin/)
   layouts/composed-banner.json         # Shared Encoder full-canvas pixmap layout
-  profiles/Wardeck.streamDeckProfile   # Stream Deck+ default layout (keys + dials)
 src/
   plugin.ts
   actions/           # stat, platform-summary, *-banner
@@ -203,7 +149,6 @@ src/
   icons.ts           # key image paths
   formatting.ts
 scripts/
-  generate-plus-profile.mjs
   smoke.mjs
   icons/             # PNG generator
 ```
@@ -218,7 +163,6 @@ scripts/
 | `npm run validate` | Validate plugin package via CLI |
 | `npm run smoke` | Offline schema / formatting / icon checks (no API keys) |
 | `npm run icons` | Regenerate PNG icons via `scripts/icons/generate_icons.py` |
-| `npm run profile:plus` | Regenerate the Stream Deck+ `.streamDeckProfile` |
 
 ## Security notes
 

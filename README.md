@@ -170,9 +170,10 @@ Lucide-only monochrome marks (`lucide-static`, ISC), white/light on near-black k
 
 | Mark | Lucide | Meaning |
 | --- | --- | --- |
-| `imgs/marks/wifi` | `wifi` | Wi‑Fi / default stats |
+| `imgs/marks/wifi` | `wifi` | Wi‑Fi–specific stats |
 | `imgs/marks/bluetooth` | `bluetooth` | Bluetooth (WDGWars BLE) |
-| `imgs/marks/combo` | `wifi` + `bluetooth` | Wi‑Fi + Bluetooth compose |
+| `imgs/marks/combo` | `wifi` + `bluetooth` | Refresh All / WDGWars |
+| `imgs/marks/radio` | `radio` | Platform summaries / totals |
 | `imgs/marks/podium` | `podium` | WiGLE Rank / Month rank |
 | `imgs/marks/car` | `car` | Wardrift Routes |
 | `imgs/marks/calendar` | `calendar` | Wardrift Streak |

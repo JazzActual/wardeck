@@ -2,7 +2,7 @@
 """Generate Wardeck Stream Deck icons from Lucide (lucide-static, ISC).
 
 Marks (all Lucide; combo = wifi + bluetooth compose):
-  wifi · bluetooth · combo · podium · car · calendar · swords · coins · biceps-flexed · zap · user-round-group
+  wifi · bluetooth · combo · radio · podium · car · calendar · swords · coins · biceps-flexed · zap · user-round-group
 
 Sizes: category 28/56, action list 20/40, key 72/144, marketplace 288/512
 
@@ -37,6 +37,7 @@ KEY_GLYPH_FRAC = 78 / 320
 SINGLE_MARKS = (
     "wifi",
     "bluetooth",
+    "radio",
     "podium",
     "car",
     "calendar",
@@ -208,8 +209,8 @@ def main() -> None:
 
     copy_pair(MARKS / "wifi" / "icon", PLUGIN / "actions" / "stat" / "icon")
     copy_pair(MARKS / "wifi" / "key", PLUGIN / "actions" / "stat" / "key")
-    copy_pair(MARKS / "combo" / "icon", PLUGIN / "actions" / "platform-summary" / "icon")
-    copy_pair(MARKS / "combo" / "key", PLUGIN / "actions" / "platform-summary" / "key")
+    copy_pair(MARKS / "radio" / "icon", PLUGIN / "actions" / "platform-summary" / "icon")
+    copy_pair(MARKS / "radio" / "key", PLUGIN / "actions" / "platform-summary" / "key")
     copy_pair(MARKS / "combo" / "icon", PLUGIN / "actions" / "refresh" / "icon")
     copy_pair(MARKS / "combo" / "key", PLUGIN / "actions" / "refresh" / "key")
     copy_pair(MARKS / "wifi" / "icon", PLUGIN / "actions" / "wardrift-banner" / "icon")
@@ -219,9 +220,9 @@ def main() -> None:
     copy_pair(MARKS / "combo" / "icon", PLUGIN / "actions" / "wdgwars-banner" / "icon")
     copy_pair(MARKS / "combo" / "key", PLUGIN / "actions" / "wdgwars-banner" / "key")
 
-    copy_pair(MARKS / "wifi" / "key", PLUGIN / "platforms" / "wigle" / "key")
-    copy_pair(MARKS / "combo" / "key", PLUGIN / "platforms" / "wdgwars" / "key")
-    copy_pair(MARKS / "wifi" / "key", PLUGIN / "platforms" / "wardrift" / "key")
+    copy_pair(MARKS / "radio" / "key", PLUGIN / "platforms" / "wigle" / "key")
+    copy_pair(MARKS / "radio" / "key", PLUGIN / "platforms" / "wdgwars" / "key")
+    copy_pair(MARKS / "radio" / "key", PLUGIN / "platforms" / "wardrift" / "key")
     copy_pair(MARKS / "combo" / "key", PLUGIN / "platforms" / "all" / "key")
     copy_pair(MARKS / "bluetooth" / "key", PLUGIN / "platforms" / "bluetooth" / "key")
 

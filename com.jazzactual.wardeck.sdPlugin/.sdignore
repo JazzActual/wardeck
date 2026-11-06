@@ -1,0 +1,6 @@
+# Excluded from .streamDeckPlugin packages (gitignore syntax).
+# CLI already skips .git, .env*, *.log, *.js.map — keep explicit for clarity.
+logs/
+*.log
+*.js.map
+.DS_Store

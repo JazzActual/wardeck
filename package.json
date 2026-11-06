@@ -8,6 +8,7 @@
 		"watch": "rollup -c -w --watch.onEnd=\"streamdeck restart com.jazzactual.wardeck\"",
 		"link": "streamdeck link com.jazzactual.wardeck.sdPlugin",
 		"validate": "streamdeck validate com.jazzactual.wardeck.sdPlugin",
+		"pack": "npm run build && streamdeck pack com.jazzactual.wardeck.sdPlugin --force --output dist",
 		"smoke": "node scripts/smoke.mjs",
 		"icons": "python3 scripts/icons/generate_icons.py"
 	},

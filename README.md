@@ -11,7 +11,11 @@
 
 Elgato Stream Deck plugin that shows live wardriving statistics from **WiGLE**, **WDGWars**, and **Wardrift**.
 
-Developed for **local sideload** with a temporary UUID (`com.jazzactual.wardeck`) — not yet on Elgato Marketplace / Maker.
+Developed for **local install / sideload** with a temporary UUID (`com.jazzactual.wardeck`) — not yet on Elgato Marketplace / Maker.
+
+## Easy Install
+
+Download the latest **`.streamDeckPlugin`** from [GitHub Releases](https://github.com/JazzActual/wardeck/releases), then double-click it (or open it with the Stream Deck app). Stream Deck installs Wardeck like any other plugin — no Terminal or Node.js required. After install, add Wardeck actions from the category list and enter API credentials in the Property Inspector.
 
 ## Features
 
@@ -31,7 +35,7 @@ Developed for **local sideload** with a temporary UUID (`com.jazzactual.wardeck`
 - [Stream Deck software 7.1+](https://www.elgato.com/stream-deck)
 - A Stream Deck device (or Stream Deck Mobile for UI testing)
 
-## Quick start (sideload)
+## Quick start (developers)
 
 ```bash
 git clone https://github.com/JazzActual/wardeck.git
@@ -39,6 +43,15 @@ cd wardeck
 npm install
 npm run build
 ```
+
+### Package a double-click installer
+
+```bash
+npm run pack
+# → dist/com.jazzactual.wardeck.streamDeckPlugin
+```
+
+Attach that file to a [GitHub Release](https://github.com/JazzActual/wardeck/releases/new) so friends can download and double-click it. (`npm run pack` builds first, then runs `streamdeck pack`.)
 
 Install the Stream Deck CLI if needed:
 
@@ -200,6 +213,7 @@ scripts/
 | `npm run watch` | Rebuild on change and `streamdeck restart` |
 | `npm run link` | Symlink plugin into Stream Deck Plugins folder |
 | `npm run validate` | Validate plugin package via CLI |
+| `npm run pack` | Build + create `dist/*.streamDeckPlugin` (double-click installer) |
 | `npm run smoke` | Offline schema / formatting / icon checks (no API keys) |
 | `npm run icons` | Regenerate PNG icons via `scripts/icons/generate_icons.py` |
 

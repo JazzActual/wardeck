@@ -523,4 +523,16 @@ assert.equal(
 	"manifest still has Refresh action"
 );
 
+{
+	const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf8"));
+	assert.ok(
+		typeof pkg.scripts?.pack === "string" && pkg.scripts.pack.includes("streamdeck pack"),
+		"package.json missing npm run pack (streamdeck pack)"
+	);
+	assert.ok(
+		fs.existsSync(path.join(pluginRoot, ".sdignore")),
+		"missing com.jazzactual.wardeck.sdPlugin/.sdignore"
+	);
+}
+
 console.log("smoke ok");

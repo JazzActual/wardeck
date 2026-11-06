@@ -55,34 +55,33 @@
 			<p id="test-status" style="margin: 8px 12px; font-size: 12px; opacity: 0.85"></p>
 		</details>
 
-		<details>
-			<summary>Polling (global)</summary>
-			<sdpi-item label="WiGLE (min)">
-				<sdpi-textfield
+		<details open>
+			<summary>Auto-update (global)</summary>
+			<p style="margin: 4px 12px 8px; font-size: 12px; opacity: 0.85">
+				WDGWars and Wardrift refresh every 4 hours. WiGLE refreshes once per day at the time below.
+			</p>
+			<sdpi-item label="WiGLE daily time">
+				<sdpi-calendar
 					global
-					setting="wiglePollMinutes"
-					default="15"
-					value-type="number"
-					placeholder="15"
-				></sdpi-textfield>
+					type="time"
+					setting="wigleDailyTime"
+					default="06:00"
+				></sdpi-calendar>
 			</sdpi-item>
-			<sdpi-item label="WDGWars (min)">
-				<sdpi-textfield
-					global
-					setting="wdgwarsPollMinutes"
-					default="5"
-					value-type="number"
-					placeholder="5"
-				></sdpi-textfield>
-			</sdpi-item>
-			<sdpi-item label="Wardrift (min)">
-				<sdpi-textfield
-					global
-					setting="wardriftPollMinutes"
-					default="15"
-					value-type="number"
-					placeholder="15"
-				></sdpi-textfield>
+			<sdpi-item label="WiGLE timezone">
+				<sdpi-select global setting="wigleTimezone" default="local">
+					<option value="local">Local (host clock)</option>
+					<option value="UTC">UTC</option>
+					<option value="America/Los_Angeles">America/Los_Angeles</option>
+					<option value="America/Denver">America/Denver</option>
+					<option value="America/Chicago">America/Chicago</option>
+					<option value="America/New_York">America/New_York</option>
+					<option value="Europe/London">Europe/London</option>
+					<option value="Europe/Berlin">Europe/Berlin</option>
+					<option value="Europe/Warsaw">Europe/Warsaw</option>
+					<option value="Asia/Tokyo">Asia/Tokyo</option>
+					<option value="Australia/Sydney">Australia/Sydney</option>
+				</sdpi-select>
 			</sdpi-item>
 		</details>
 

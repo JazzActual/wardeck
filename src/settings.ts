@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { formatDailyTime, parseDailyTime } from "./schedule.js";
+
 export const PlatformSchema = z.enum(["wigle", "wdgwars", "wardrift"]);
 export type Platform = z.infer<typeof PlatformSchema>;
 
@@ -34,13 +36,19 @@ export const WardriftMetricSchema = z.enum([
 ]);
 export type WardriftMetric = z.infer<typeof WardriftMetricSchema>;
 
-const pollMinutes = (fallback: number) =>
-	z.preprocess((value) => {
-		if (value === "" || value === null || value === undefined) {
-			return fallback;
-		}
-		return value;
-	}, z.coerce.number().min(1).max(1440).default(fallback));
+const dailyTimeSetting = z.preprocess((value) => {
+	if (value === "" || value === null || value === undefined) {
+		return "06:00";
+	}
+	return formatDailyTime(parseDailyTime(String(value)));
+}, z.string().default("06:00"));
+
+const timezoneSetting = z.preprocess((value) => {
+	if (value === "" || value === null || value === undefined) {
+		return "local";
+	}
+	return String(value).trim() || "local";
+}, z.string().default("local"));
 
 export const GlobalSettingsSchema = z.object({
 	wigleApiName: z.string().default(""),
@@ -52,12 +60,19 @@ export const GlobalSettingsSchema = z.object({
 	wardriftSessionToken: z.string().default(""),
 	/** ISO expiry from Wardrift sign-in; empty if unknown. */
 	wardriftSessionExpiresAt: z.string().default(""),
-	/** WiGLE poll interval in minutes (default 15). */
-	wiglePollMinutes: pollMinutes(15),
-	/** WDGWars poll interval in minutes (default 5). */
-	wdgwarsPollMinutes: pollMinutes(5),
-	/** Wardrift poll interval in minutes (default 15, matches CYDesk). */
-	wardriftPollMinutes: pollMinutes(15)
+	/** WiGLE daily auto-fetch wall-clock time (`HH:mm`, 24h). */
+	wigleDailyTime: dailyTimeSetting,
+	/**
+	 * IANA timezone for WiGLE daily fetch, or `local` for the host clock.
+	 * Invalid values fall back to local at schedule time.
+	 */
+	wigleTimezone: timezoneSetting,
+	/** ISO timestamp of last successful WiGLE fetch (persisted). */
+	wigleLastFetchAt: z.string().default(""),
+	/** ISO timestamp of last successful WDGWars fetch (persisted). */
+	wdgwarsLastFetchAt: z.string().default(""),
+	/** ISO timestamp of last successful Wardrift fetch (persisted). */
+	wardriftLastFetchAt: z.string().default("")
 });
 export type GlobalSettings = z.infer<typeof GlobalSettingsSchema>;
 
@@ -151,3 +166,18 @@ export const WARDRIFT_METRIC_LABELS: Record<WardriftMetric, string> = {
 	name: "Name",
 	faction: "Faction"
 };
+
+/** Common IANA zones for the WiGLE daily-time PI select (plus `local`). */
+export const WIGLE_TIMEZONE_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
+	{ value: "local", label: "Local (host clock)" },
+	{ value: "UTC", label: "UTC" },
+	{ value: "America/Los_Angeles", label: "America/Los_Angeles" },
+	{ value: "America/Denver", label: "America/Denver" },
+	{ value: "America/Chicago", label: "America/Chicago" },
+	{ value: "America/New_York", label: "America/New_York" },
+	{ value: "Europe/London", label: "Europe/London" },
+	{ value: "Europe/Berlin", label: "Europe/Berlin" },
+	{ value: "Europe/Warsaw", label: "Europe/Warsaw" },
+	{ value: "Asia/Tokyo", label: "Asia/Tokyo" },
+	{ value: "Australia/Sydney", label: "Australia/Sydney" }
+];

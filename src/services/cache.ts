@@ -6,6 +6,14 @@ import {
 	hasPlatformCredentials,
 	parseGlobalSettings
 } from "../settings.js";
+import {
+	parsePersistedFetchAt,
+	planDailyPoll,
+	planIntervalPoll,
+	WARDRIFT_POLL_MS,
+	WDGWARS_POLL_MS,
+	type SchedulePlan
+} from "../schedule.js";
 import { fetchWdgwarsMe, type WdgwarsMe } from "./wdgwars.js";
 import {
 	clearWardriftMemorySession,
@@ -45,7 +53,7 @@ class StatsCache {
 		wardrift: idleState()
 	};
 	private started = false;
-	/** Fingerprint of credential + poll settings (excludes Wardrift session token). */
+	/** Fingerprint of credential + schedule settings (excludes session token + last-fetch). */
 	private settingsFingerprint = "";
 
 	onUpdate(listener: () => void): () => void {
@@ -76,14 +84,15 @@ class StatsCache {
 
 	async refreshFromGlobalSettings(force = false): Promise<void> {
 		const settings = parseGlobalSettings(await streamDeck.settings.getGlobalSettings());
-		const fingerprint = credentialFingerprint(settings);
+		this.hydrateLastFetch(settings);
+		const fingerprint = scheduleFingerprint(settings);
 		if (!force && fingerprint === this.settingsFingerprint) {
-			// Session-token persistence must not cascade into a full re-poll.
+			// Session-token / last-fetch persistence must not cascade into a full re-poll.
 			return;
 		}
 		this.settingsFingerprint = fingerprint;
 		for (const platform of ALL_PLATFORMS) {
-			this.schedule(platform, settings, true);
+			this.schedule(platform, settings);
 		}
 	}
 
@@ -106,7 +115,57 @@ class StatsCache {
 		return this.wardrift;
 	}
 
-	private schedule(platform: Platform, settings: GlobalSettings, immediate: boolean): void {
+	private hydrateLastFetch(settings: GlobalSettings): void {
+		const wigleAt = parsePersistedFetchAt(settings.wigleLastFetchAt);
+		if (wigleAt !== null && this.wigle.lastSuccessAt === null) {
+			this.wigle = {
+				...this.wigle,
+				lastSuccessAt: wigleAt,
+				configured: hasPlatformCredentials("wigle", settings)
+			};
+		}
+		const wdgwarsAt = parsePersistedFetchAt(settings.wdgwarsLastFetchAt);
+		if (wdgwarsAt !== null && this.wdgwars.lastSuccessAt === null) {
+			this.wdgwars = {
+				...this.wdgwars,
+				lastSuccessAt: wdgwarsAt,
+				configured: hasPlatformCredentials("wdgwars", settings)
+			};
+		}
+		const wardriftAt = parsePersistedFetchAt(settings.wardriftLastFetchAt);
+		if (wardriftAt !== null && this.wardrift.lastSuccessAt === null) {
+			this.wardrift = {
+				...this.wardrift,
+				lastSuccessAt: wardriftAt,
+				configured: hasPlatformCredentials("wardrift", settings)
+			};
+		}
+	}
+
+	private planFor(platform: Platform, settings: GlobalSettings): SchedulePlan {
+		switch (platform) {
+			case "wigle":
+				return planDailyPoll(
+					effectiveLastFetch(settings.wigleLastFetchAt, this.wigle.lastSuccessAt),
+					settings.wigleDailyTime,
+					settings.wigleTimezone
+				);
+			case "wdgwars":
+				return planIntervalPoll(
+					effectiveLastFetch(settings.wdgwarsLastFetchAt, this.wdgwars.lastSuccessAt),
+					WDGWARS_POLL_MS
+				);
+			case "wardrift":
+				return planIntervalPoll(
+					effectiveLastFetch(settings.wardriftLastFetchAt, this.wardrift.lastSuccessAt),
+					WARDRIFT_POLL_MS
+				);
+			default:
+				return { immediate: true, delayMs: 0 };
+		}
+	}
+
+	private schedule(platform: Platform, settings: GlobalSettings): void {
 		const st = this.state[platform];
 		if (st.timer) {
 			clearTimeout(st.timer);
@@ -121,7 +180,8 @@ class StatsCache {
 			return;
 		}
 
-		const delay = immediate ? 0 : this.pollIntervalMs(platform, settings);
+		const plan = this.planFor(platform, settings);
+		const delay = plan.immediate ? 0 : plan.delayMs;
 		st.timer = setTimeout(() => {
 			void this.poll(platform, settings, false).finally(() => {
 				void this.rescheduleAfterPoll(platform);
@@ -132,9 +192,21 @@ class StatsCache {
 	private async rescheduleAfterPoll(platform: Platform): Promise<void> {
 		const settings = parseGlobalSettings(await streamDeck.settings.getGlobalSettings());
 		const st = this.state[platform];
-		const base = this.pollIntervalMs(platform, settings);
-		const wait = Math.max(base, st.nextAllowedAt - Date.now());
-		const jittered = wait * (1 + (Math.random() * 2 - 1) * JITTER_RATIO);
+
+		if (!hasPlatformCredentials(platform, settings)) {
+			this.clearPlatform(platform);
+			this.notify();
+			return;
+		}
+
+		const plan = this.planFor(platform, settings);
+		let wait = plan.immediate ? 0 : plan.delayMs;
+		wait = Math.max(wait, st.nextAllowedAt - Date.now());
+
+		// Light jitter on fixed intervals only — keep WiGLE on the wall-clock slot.
+		if (platform !== "wigle" && wait > 0) {
+			wait = wait * (1 + (Math.random() * 2 - 1) * JITTER_RATIO);
+		}
 
 		if (st.timer) {
 			clearTimeout(st.timer);
@@ -143,20 +215,7 @@ class StatsCache {
 			void this.poll(platform, settings, false).finally(() => {
 				void this.rescheduleAfterPoll(platform);
 			});
-		}, Math.max(1000, jittered));
-	}
-
-	private pollIntervalMs(platform: Platform, settings: GlobalSettings): number {
-		switch (platform) {
-			case "wigle":
-				return Math.max(1, settings.wiglePollMinutes) * 60_000;
-			case "wdgwars":
-				return Math.max(1, settings.wdgwarsPollMinutes) * 60_000;
-			case "wardrift":
-				return Math.max(1, settings.wardriftPollMinutes) * 60_000;
-			default:
-				return 15 * 60_000;
-		}
+		}, Math.max(1000, wait));
 	}
 
 	private clearPlatform(platform: Platform): void {
@@ -205,18 +264,38 @@ class StatsCache {
 		return st.inFlight;
 	}
 
+	private async persistLastFetch(platform: Platform, atMs: number): Promise<void> {
+		const iso = new Date(atMs).toISOString();
+		const current = parseGlobalSettings(await streamDeck.settings.getGlobalSettings());
+		const key =
+			platform === "wigle"
+				? "wigleLastFetchAt"
+				: platform === "wdgwars"
+					? "wdgwarsLastFetchAt"
+					: "wardriftLastFetchAt";
+		if (current[key] === iso) {
+			return;
+		}
+		await streamDeck.settings.setGlobalSettings({
+			...current,
+			[key]: iso
+		});
+	}
+
 	private async pollWigle(settings: GlobalSettings, st: PlatformState): Promise<void> {
 		const result = await fetchWigleUserStats(settings);
 		if (result.ok) {
+			const at = Date.now();
 			this.wigle = {
 				data: result.data,
-				lastSuccessAt: Date.now(),
+				lastSuccessAt: at,
 				lastErrorAt: null,
 				lastError: null,
 				configured: true
 			};
 			st.backoffMs = DEFAULT_BACKOFF_MS;
 			st.nextAllowedAt = 0;
+			await this.persistLastFetch("wigle", at);
 		} else {
 			this.wigle = {
 				...this.wigle,
@@ -232,15 +311,17 @@ class StatsCache {
 	private async pollWdgwars(settings: GlobalSettings, st: PlatformState): Promise<void> {
 		const result = await fetchWdgwarsMe(settings);
 		if (result.ok) {
+			const at = Date.now();
 			this.wdgwars = {
 				data: result.data,
-				lastSuccessAt: Date.now(),
+				lastSuccessAt: at,
 				lastErrorAt: null,
 				lastError: null,
 				configured: true
 			};
 			st.backoffMs = DEFAULT_BACKOFF_MS;
 			st.nextAllowedAt = 0;
+			await this.persistLastFetch("wdgwars", at);
 		} else {
 			this.wdgwars = {
 				...this.wdgwars,
@@ -256,15 +337,17 @@ class StatsCache {
 	private async pollWardrift(settings: GlobalSettings, st: PlatformState): Promise<void> {
 		const result = await fetchWardriftDashboard(settings);
 		if (result.ok) {
+			const at = Date.now();
 			this.wardrift = {
 				data: result.data,
-				lastSuccessAt: Date.now(),
+				lastSuccessAt: at,
 				lastErrorAt: null,
 				lastError: null,
 				configured: true
 			};
 			st.backoffMs = DEFAULT_BACKOFF_MS;
 			st.nextAllowedAt = 0;
+			await this.persistLastFetch("wardrift", at);
 		} else {
 			this.wardrift = {
 				...this.wardrift,
@@ -295,8 +378,7 @@ class StatsCache {
 			return;
 		}
 
-		// Auth / client errors: don't hammer; wait a poll cycle via nextAllowedAt short bump.
-		// Match CYDesk RETRY_MS ≈ 60s on Wardrift errors.
+		// Auth / client errors: don't hammer; wait a short backoff.
 		st.nextAllowedAt = Date.now() + Math.min(st.backoffMs, 60_000);
 	}
 }
@@ -320,16 +402,23 @@ function idleState(): PlatformState {
 	};
 }
 
-function credentialFingerprint(settings: GlobalSettings): string {
+function effectiveLastFetch(persisted: string, memoryMs: number | null): string {
+	const persistedMs = parsePersistedFetchAt(persisted);
+	if (memoryMs !== null && (persistedMs === null || memoryMs >= persistedMs)) {
+		return new Date(memoryMs).toISOString();
+	}
+	return persisted;
+}
+
+function scheduleFingerprint(settings: GlobalSettings): string {
 	return [
 		settings.wigleApiName,
 		settings.wigleApiToken,
 		settings.wdgwarsApiKey,
 		settings.wardriftUsername,
 		settings.wardriftPassword,
-		settings.wiglePollMinutes,
-		settings.wdgwarsPollMinutes,
-		settings.wardriftPollMinutes
+		settings.wigleDailyTime,
+		settings.wigleTimezone
 	].join("\0");
 }
 

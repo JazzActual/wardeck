@@ -161,7 +161,7 @@ Without credentials, keys show `—` and the plugin still runs (no crash). CI / 
 | **WiGLE Banner** | Encoder-only. Sample A: WIFI · RANK + MONTHLY RANK · MONTHLY EVENTS · BT. Labels spell **MONTHLY** (never `MO`). Display-only. |
 | **WDGWars Banner** | Encoder-only. Sample A: TOTAL · WIFI + BLE · AIRCRAFT · MESH + BADGES (badge count). Display-only. |
 
-Default polling: WiGLE **15 min**, WDGWars **5 min**, Wardrift **15 min** (tunable in PI). Cache + exponential backoff on `429` / `5xx`.
+Auto-update: WDGWars + Wardrift every **4 hours**; WiGLE once per day at a PI-configured time of day + timezone (`local` or IANA). Last successful fetch timestamps are persisted in global settings. Stat press still refreshes that platform immediately. Cache + exponential backoff on `429` / `5xx`.
 
 ## Icons
 

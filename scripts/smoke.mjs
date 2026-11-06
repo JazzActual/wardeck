@@ -30,13 +30,25 @@ assert.equal(formatCompactNumber(42), "42");
 assert.equal(formatCompactNumber(1200), "1.2k");
 assert.equal(formatCompactNumber(1_000_000), "1M");
 
-const pollMinutes = (fallback) =>
-	z.preprocess((value) => {
-		if (value === "" || value === null || value === undefined) {
-			return fallback;
-		}
-		return value;
-	}, z.coerce.number().min(1).max(1440).default(fallback));
+const dailyTimeSetting = z.preprocess((value) => {
+	if (value === "" || value === null || value === undefined) {
+		return "06:00";
+	}
+	const m = /^(\d{1,2}):(\d{2})$/.exec(String(value).trim());
+	if (!m) {
+		return "06:00";
+	}
+	const hour = Math.min(23, Math.max(0, Number(m[1])));
+	const minute = Math.min(59, Math.max(0, Number(m[2])));
+	return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}, z.string().default("06:00"));
+
+const timezoneSetting = z.preprocess((value) => {
+	if (value === "" || value === null || value === undefined) {
+		return "local";
+	}
+	return String(value).trim() || "local";
+}, z.string().default("local"));
 
 const GlobalSettingsSchema = z.object({
 	wigleApiName: z.string().default(""),
@@ -46,9 +58,11 @@ const GlobalSettingsSchema = z.object({
 	wardriftPassword: z.string().default(""),
 	wardriftSessionToken: z.string().default(""),
 	wardriftSessionExpiresAt: z.string().default(""),
-	wiglePollMinutes: pollMinutes(15),
-	wdgwarsPollMinutes: pollMinutes(5),
-	wardriftPollMinutes: pollMinutes(15)
+	wigleDailyTime: dailyTimeSetting,
+	wigleTimezone: timezoneSetting,
+	wigleLastFetchAt: z.string().default(""),
+	wdgwarsLastFetchAt: z.string().default(""),
+	wardriftLastFetchAt: z.string().default("")
 });
 
 const empty = GlobalSettingsSchema.parse({});
@@ -56,11 +70,12 @@ assert.equal(empty.wigleApiName, "");
 assert.equal(empty.wardriftUsername, "");
 assert.equal(empty.wardriftPassword, "");
 assert.equal(empty.wardriftSessionToken, "");
-assert.equal(empty.wiglePollMinutes, 15);
-assert.equal(empty.wdgwarsPollMinutes, 5);
-assert.equal(empty.wardriftPollMinutes, 15);
-assert.equal(GlobalSettingsSchema.parse({ wiglePollMinutes: "" }).wiglePollMinutes, 15);
-assert.equal(GlobalSettingsSchema.parse({ wardriftPollMinutes: "" }).wardriftPollMinutes, 15);
+assert.equal(empty.wigleDailyTime, "06:00");
+assert.equal(empty.wigleTimezone, "local");
+assert.equal(empty.wigleLastFetchAt, "");
+assert.equal(GlobalSettingsSchema.parse({ wigleDailyTime: "" }).wigleDailyTime, "06:00");
+assert.equal(GlobalSettingsSchema.parse({ wigleDailyTime: "9:30" }).wigleDailyTime, "09:30");
+assert.equal(GlobalSettingsSchema.parse({ wigleTimezone: "" }).wigleTimezone, "local");
 
 const PlatformSchema = z.enum(["wigle", "wdgwars", "wardrift"]);
 assert.deepEqual(PlatformSchema.options, ["wigle", "wdgwars", "wardrift"]);
@@ -304,5 +319,68 @@ assert.equal(formatCompactNumber(48291), "48.3k");
 assert.equal("MONTHLY RANK".includes("MO "), false);
 assert.ok("MONTHLY RANK".startsWith("MONTHLY"));
 assert.ok("MONTHLY EVENTS".startsWith("MONTHLY"));
+
+// Auto-update schedules: 4h interval plan + daily WiGLE plan.
+const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
+function planIntervalPoll(lastFetchAt, intervalMs, nowMs) {
+	const last = lastFetchAt ? Date.parse(lastFetchAt) : NaN;
+	if (!Number.isFinite(last)) {
+		return { immediate: true, delayMs: 0 };
+	}
+	const elapsed = nowMs - last;
+	if (elapsed >= intervalMs) {
+		return { immediate: true, delayMs: 0 };
+	}
+	return { immediate: false, delayMs: Math.max(1000, intervalMs - elapsed) };
+}
+const now = Date.UTC(2026, 10, 6, 12, 0, 0);
+assert.deepEqual(planIntervalPoll("", FOUR_HOURS_MS, now), { immediate: true, delayMs: 0 });
+assert.deepEqual(planIntervalPoll(new Date(now - FOUR_HOURS_MS - 1).toISOString(), FOUR_HOURS_MS, now), {
+	immediate: true,
+	delayMs: 0
+});
+assert.deepEqual(planIntervalPoll(new Date(now - 60_000).toISOString(), FOUR_HOURS_MS, now), {
+	immediate: false,
+	delayMs: FOUR_HOURS_MS - 60_000
+});
+
+function nextDailyLocal(timeHHMM, fromMs) {
+	const [h, m] = timeHHMM.split(":").map(Number);
+	const from = new Date(fromMs);
+	const target = new Date(from.getFullYear(), from.getMonth(), from.getDate(), h, m, 0, 0);
+	if (target.getTime() <= fromMs) {
+		target.setDate(target.getDate() + 1);
+	}
+	return target.getTime();
+}
+function planDailyPollLocal(lastFetchAt, timeHHMM, nowMs) {
+	const last = lastFetchAt ? Date.parse(lastFetchAt) : NaN;
+	const next = nextDailyLocal(timeHHMM, nowMs);
+	const recent = next - 24 * 60 * 60 * 1000;
+	if (!Number.isFinite(last) || last < recent - 5_000) {
+		return { immediate: true, delayMs: 0 };
+	}
+	return { immediate: false, delayMs: Math.max(1000, next - nowMs) };
+}
+const morning = new Date(2026, 10, 6, 7, 0, 0).getTime(); // after 06:00 local
+assert.equal(planDailyPollLocal("", "06:00", morning).immediate, true);
+assert.equal(
+	planDailyPollLocal(new Date(morning - 30 * 60_000).toISOString(), "06:00", morning).immediate,
+	false
+);
+
+for (const rel of ["ui/stat.html", "ui/platform-summary.html"]) {
+	const html = fs.readFileSync(path.join(pluginRoot, rel), "utf8");
+	assert.ok(html.includes('setting="wigleDailyTime"'), `${rel} missing wigleDailyTime`);
+	assert.ok(html.includes('setting="wigleTimezone"'), `${rel} missing wigleTimezone`);
+	assert.equal(html.includes("wiglePollMinutes"), false, `${rel} still has poll minutes`);
+	assert.equal(html.includes("Refresh"), false, `${rel} still mentions Refresh`);
+}
+
+assert.equal(
+	manifest.Actions.some((a) => String(a.UUID).includes("refresh")),
+	false,
+	"manifest still has Refresh action"
+);
 
 console.log("smoke ok");

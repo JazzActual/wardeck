@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Generate Wardeck Stream Deck icons — three minimal monochrome marks only.
+"""Generate Wardeck Stream Deck icons — minimal monochrome marks.
 
-Marks: wifi · bluetooth · combo (wifi+bt)
-Bluetooth uses the standard ᛒ rune via SVG (cairosvg); wifi is drawn with Pillow.
+Marks: wifi · bluetooth · combo (wifi+bt) · podium (classic 3-step / variant A)
+Bluetooth uses the standard ᛒ rune via SVG (cairosvg); wifi/podium are drawn with Pillow.
 Copied into category / marketplace / action / platform paths as needed.
 
 Sizes: category 28/56, action list 20/40, key 72/144, marketplace 288/512
@@ -131,9 +131,61 @@ def paste_center(base: Image.Image, glyph: Image.Image, cx: int, cy: int) -> Non
     base.alpha_composite(glyph, (x, y))
 
 
+def draw_podium(
+    draw: ImageDraw.ImageDraw,
+    color,
+    cx: int,
+    bottom: int,
+    bar_w: int,
+    gap: int,
+    heights: tuple[int, int, int],
+    radius: int,
+) -> None:
+    """Classic 3-step podium (variant A): 2nd / 1st / 3rd heights, left→right."""
+    total_w = bar_w * 3 + gap * 2
+    x0 = int(cx - total_w / 2)
+    for i, h in enumerate(heights):
+        left = x0 + i * (bar_w + gap)
+        top = bottom - h
+        draw.rounded_rectangle(
+            [left, top, left + bar_w - 1, bottom - 1],
+            radius=max(1, radius),
+            fill=color,
+        )
+
+
+def podium_heights(tall: int) -> tuple[int, int, int]:
+    """Approved variant A proportions (~50 : 79 : 36)."""
+    return (
+        max(2, round(tall * 50 / 79)),
+        max(3, tall),
+        max(2, round(tall * 36 / 79)),
+    )
+
+
 def make_mono_wifi(size: int) -> Image.Image:
     def paint(draw, s):
         draw_wifi(draw, WHITE, s // 2, int(s * 0.62), int(s * 0.42), max(2, s // 14))
+
+    return supersample(paint, size)
+
+
+def make_mono_podium(size: int) -> Image.Image:
+    def paint(draw, s):
+        # Joined silhouette reads cleaner at 20/40 list sizes.
+        tall = int(s * 0.55)
+        bar_w = max(3, int(s * 0.22))
+        gap = max(1, int(s * 0.03))
+        draw_podium(
+            draw,
+            WHITE,
+            s // 2,
+            int(s * 0.78),
+            bar_w,
+            gap,
+            podium_heights(tall),
+            radius=max(1, s // 18),
+        )
 
     return supersample(paint, size)
 
@@ -169,6 +221,30 @@ def make_key_wifi(size: int) -> Image.Image:
     def paint(draw, s):
         key_field(draw, s)
         draw_wifi(draw, LIGHT, s // 2, int(s * 0.34), int(s * 0.22), lw(s, 2.0))
+
+    return supersample(paint, size)
+
+
+def make_key_podium(size: int) -> Image.Image:
+    def paint(draw, s):
+        key_field(draw, s)
+        # Match approved podium-a.png layout (320² → bars bottom ~0.366, tall ~0.247).
+        tall = int(s * 0.247)
+        bar_w = max(3, int(s * 0.1125))
+        gap = max(1, int(s * 0.00625 * 4) // 4) or 1
+        # Keep a visible hairline gap at key size (approved asset uses ~2px @ 320).
+        if s >= 72:
+            gap = max(gap, max(1, round(s * 2 / 320)))
+        draw_podium(
+            draw,
+            LIGHT,
+            s // 2,
+            int(s * 0.366),
+            bar_w,
+            gap,
+            podium_heights(tall),
+            radius=max(1, round(s * 4 / 320)),
+        )
 
     return supersample(paint, size)
 
@@ -240,9 +316,11 @@ def main() -> None:
     write_pair(make_mono_wifi, MARKS / "wifi" / "icon", (20, 40))
     write_pair(make_mono_bluetooth, MARKS / "bluetooth" / "icon", (20, 40))
     write_pair(make_mono_combo, MARKS / "combo" / "icon", (20, 40))
+    write_pair(make_mono_podium, MARKS / "podium" / "icon", (20, 40))
     write_pair(make_key_wifi, MARKS / "wifi" / "key", (72, 144))
     write_pair(make_key_bluetooth, MARKS / "bluetooth" / "key", (72, 144))
     write_pair(make_key_combo, MARKS / "combo" / "key", (72, 144))
+    write_pair(make_key_podium, MARKS / "podium" / "key", (72, 144))
 
     write_pair(make_mono_wifi, PLUGIN / "plugin" / "category-icon", (28, 56))
     save(make_marketplace(288), PLUGIN / "plugin" / "marketplace.png")

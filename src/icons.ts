@@ -1,12 +1,13 @@
 import type { Platform, StatActionSettings } from "./settings.js";
 
-/** Only three marks — wifi / bluetooth / combo — reused everywhere. */
-export type IconMark = "wifi" | "bluetooth" | "combo";
+/** Shared runtime marks — wifi / bluetooth / combo / podium. */
+export type IconMark = "wifi" | "bluetooth" | "combo" | "podium";
 
 const MARK_KEYS: Record<IconMark, string> = {
 	wifi: "imgs/marks/wifi/key",
 	bluetooth: "imgs/marks/bluetooth/key",
-	combo: "imgs/marks/combo/key"
+	combo: "imgs/marks/combo/key",
+	podium: "imgs/marks/podium/key"
 };
 
 export function markKeyImage(mark: IconMark): string {
@@ -25,10 +26,16 @@ export function platformKeyImage(platform: Platform): string {
 	}
 }
 
-/** Stat key: BLE metrics → bluetooth; otherwise wifi (WDGWars total stays wifi). */
+/** Stat key: BLE → bluetooth; WiGLE rank / month rank → podium; else wifi. */
 export function statKeyImage(settings: StatActionSettings): string {
 	if (settings.platform === "wdgwars" && settings.wdgwarsMetric === "ble") {
 		return MARK_KEYS.bluetooth;
+	}
+	if (
+		settings.platform === "wigle" &&
+		(settings.wigleMetric === "rank" || settings.wigleMetric === "monthRank")
+	) {
+		return MARK_KEYS.podium;
 	}
 	return MARK_KEYS.wifi;
 }

@@ -166,15 +166,16 @@ Default polling: WiGLE **15 min**, WDGWars **5 min**, Wardrift **15 min** (tunab
 
 ## Icons
 
-Only **three** minimal monochrome marks, reused everywhere:
+Minimal monochrome marks, reused across keys:
 
 | Mark | Meaning |
 | --- | --- |
 | `imgs/marks/wifi` | Wi‑Fi |
 | `imgs/marks/bluetooth` | Bluetooth |
 | `imgs/marks/combo` | Wi‑Fi + Bluetooth |
+| `imgs/marks/podium` | Rank (classic 3-step podium, variant A) |
 
-White/light on near-black keys; white-on-transparent list glyphs. Bluetooth is the standard ᛒ rune (pointed geometric B). Category uses wifi; marketplace / summary / refresh default to combo; Stat uses wifi (bluetooth when the metric is BLE). Regenerate with `npm run icons` (requires Pillow + cairosvg).
+White/light on near-black keys; white-on-transparent list glyphs. Bluetooth is the standard ᛒ rune (pointed geometric B). Category uses wifi; marketplace / summary / refresh default to combo; Stat uses wifi, bluetooth when the metric is BLE, and podium for WiGLE Rank / Month rank. Regenerate with `npm run icons` (requires Pillow + cairosvg).
 
 ## Project layout
 

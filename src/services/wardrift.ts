@@ -154,8 +154,6 @@ export function readWardriftMetric(
 			return character?.exp_to_next_level ?? null;
 		case "name":
 			return character?.name ?? null;
-		case "faction":
-			return resolveFaction(character) ?? null;
 		default:
 			return null;
 	}

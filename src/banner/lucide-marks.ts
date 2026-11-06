@@ -18,7 +18,6 @@ export type LucideMark =
 	| "network"
 	| "award"
 	| "biceps-flexed"
-	| "user-round-group"
 	| "radio-tower";
 
 /** @deprecated Prefer LucideMark — kept for banner call sites. */
@@ -90,14 +89,6 @@ const LUCIDE_INNER: Record<LucideMark, string> = {
 		`<path d="M12.409 13.017A5 5 0 0 1 22 15c0 3.866-4 7-9 7-4.077 0-8.153-.82-10.371-2.462-.426-.316-.631-.832-.62-1.362C2.118 12.723 2.627 2 10 2a3 3 0 0 1 3 3 2 2 0 0 1-2 2c-1.105 0-1.64-.444-2-1"/>`,
 		`<path d="M15 14a5 5 0 0 0-7.584 2"/>`,
 		`<path d="M9.964 6.825C8.019 7.977 9.5 13 8 15"/>`
-	].join(""),
-	"user-round-group": [
-		`<path d="M17 21a5 5 0 00-10 0"/>`,
-		`<path d="M22 10.5a3.5 3.5 0 00-5.507-2.868"/>`,
-		`<path d="M7.507 7.632A3.5 3.5 0 002 10.5"/>`,
-		`<circle cx="12" cy="13" r="3"/>`,
-		`<circle cx="18.5" cy="4.5" r="2.5"/>`,
-		`<circle cx="5.5" cy="4.5" r="2.5"/>`
 	].join(""),
 	"radio-tower": [
 		`<path d="M4.9 16.1C1 12.2 1 5.8 4.9 1.9"/>`,

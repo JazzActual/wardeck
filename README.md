@@ -126,9 +126,9 @@ Without credentials, keys show `—` and the plugin still runs. Smoke tests do n
 | --- | --- |
 | WiGLE | WiFi (all), Cell, Rank, Month rank, Month events |
 | WDGWars | Total, WiFi, BLE, Aircraft, Mesh, Badges |
-| Wardrift | Networks, Routes, Threats, Streak, Level, Coin, To next, Name, Faction |
+| Wardrift | Networks, Routes, Threats, Streak, Level, Coin, To next, Name |
 
-There is no WDGWars Gang key (names overflow titles) and no dedicated Refresh keypad action.
+There is no WDGWars Gang key or Wardrift Faction key (labels overflow titles) and no dedicated Refresh keypad action.
 
 ## Auto-update
 
@@ -170,7 +170,6 @@ Lucide-only monochrome marks (`lucide-static`, ISC), white on near-black keys:
 | `imgs/marks/coins` | `coins` | Wardrift Coin |
 | `imgs/marks/biceps-flexed` | `biceps-flexed` | Wardrift Level |
 | `imgs/marks/zap` | `zap` | Wardrift To next |
-| `imgs/marks/user-round-group` | `user-round-group` | Wardrift Faction |
 
 Plus dial banners reuse the same Lucide marks as matching key metrics. Regenerate with `npm run icons` (requires Pillow, cairosvg, and `npm install` for lucide-static).
 

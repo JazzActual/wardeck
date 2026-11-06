@@ -50,7 +50,7 @@ The plugin ships a pre-laid **Wardeck** profile for **Stream Deck+** (8 LCD keys
 
 **Page 1 — WiGLE + WDGWars**
 
-| WiGLE (summary) | WiFi GPS | Rank | Refresh (all) |
+| WiGLE (summary) | WiFi | Rank | Refresh (all) |
 | --- | --- | --- | --- |
 | WDGWars (summary) | Total | WiFi | Next page → |
 
@@ -64,7 +64,7 @@ The plugin ships a pre-laid **Wardeck** profile for **Stream Deck+** (8 LCD keys
 
 | Page | Default dial action |
 | --- | --- |
-| Page 1 | **WiGLE Banner** ×4 (WIFI GPS · RANK+MONTHLY RANK · MONTHLY EVENTS · BT GPS) |
+| Page 1 | **WiGLE Banner** ×4 (WIFI · RANK+MONTHLY RANK · MONTHLY EVENTS · BT) |
 | Page 2 | **Wardrift Banner** ×4 (Networks · Routes+Threats · Streak · Coin+To next) |
 
 **WDGWars Banner** (TOTAL · WIFI+BLE · AIRCRAFT · MESH+BADGES) is available in the action list — assign it to all four dials when you want that strip (e.g. swap page 1). Keys use the plugin’s shared monochrome marks (`imgs/marks/*`).
@@ -156,10 +156,10 @@ Without credentials, keys show `—` and the plugin still runs (no crash). CI / 
 | Action | Behavior |
 | --- | --- |
 | **Stat** | Configurable platform + metric (WiGLE / WDGWars / Wardrift). Press = manual refresh for that platform. |
-| **Platform Summary** | Logo-style key with primary metric (WiGLE WiFi GPS / WDGWars Total / Wardrift Networks). Press = open platform site. |
+| **Platform Summary** | Logo-style key with primary metric (WiGLE WiFi all / WDGWars Total / Wardrift Networks). Press = open platform site. |
 | **Refresh** | Force refresh all or one platform. |
 | **Wardrift Banner** | Encoder-only. Full-strip Wardrift dashboard (name / faction / level·class, networks, routes, threats, streak, coin, to next). Display-only. Empty/error state without credentials. Streak `0` shows as `0`. |
-| **WiGLE Banner** | Encoder-only. Sample A: WIFI GPS · RANK + MONTHLY RANK · MONTHLY EVENTS · BT GPS. Labels spell **MONTHLY** (never `MO`). Display-only. |
+| **WiGLE Banner** | Encoder-only. Sample A: WIFI · RANK + MONTHLY RANK · MONTHLY EVENTS · BT. Labels spell **MONTHLY** (never `MO`). Display-only. |
 | **WDGWars Banner** | Encoder-only. Sample A: TOTAL · WIFI + BLE · AIRCRAFT · MESH + BADGES (badge count). Display-only. |
 
 Default polling: WiGLE **15 min**, WDGWars **5 min**, Wardrift **15 min** (tunable in PI). Cache + exponential backoff on `429` / `5xx`.
@@ -185,6 +185,7 @@ Lucide-only monochrome marks (`lucide-static`, ISC), white/light on near-black k
 | `imgs/marks/plane` | `plane` | WDGWars Aircraft |
 | `imgs/marks/network` | `network` | WDGWars Mesh |
 | `imgs/marks/award` | `award` | WDGWars Badges (count) |
+| `imgs/marks/antenna` | `antenna` | WiGLE Cell |
 
 Category uses wifi; marketplace / summary / refresh default to combo. Regenerate with `npm run icons` (requires Pillow, cairosvg, and `npm install` for lucide-static).
 

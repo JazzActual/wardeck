@@ -16,7 +16,8 @@ export type IconMark =
 	| "user-round-group"
 	| "plane"
 	| "network"
-	| "award";
+	| "award"
+	| "antenna";
 
 const MARK_KEYS: Record<IconMark, string> = {
 	wifi: "imgs/marks/wifi/key",
@@ -33,7 +34,8 @@ const MARK_KEYS: Record<IconMark, string> = {
 	"user-round-group": "imgs/marks/user-round-group/key",
 	plane: "imgs/marks/plane/key",
 	network: "imgs/marks/network/key",
-	award: "imgs/marks/award/key"
+	award: "imgs/marks/award/key",
+	antenna: "imgs/marks/antenna/key"
 };
 
 export function markKeyImage(mark: IconMark): string {
@@ -49,7 +51,7 @@ export function platformKeyImage(_platform: Platform): string {
  * Stat key mark:
  * - WDGWars Total → radio; BLE → bluetooth; Aircraft → plane;
  *   Mesh → network; Badges → award
- * - WiGLE Rank / Month rank → podium
+ * - WiGLE Rank / Month rank → podium; Cell → antenna
  * - Wardrift Routes → car; Streak → calendar; Threats → swords;
  *   Coin → coins; Level → biceps-flexed; To next → zap;
  *   Faction → user-round-group
@@ -72,11 +74,13 @@ export function statKeyImage(settings: StatActionSettings): string {
 				break;
 		}
 	}
-	if (
-		settings.platform === "wigle" &&
-		(settings.wigleMetric === "rank" || settings.wigleMetric === "monthRank")
-	) {
-		return MARK_KEYS.podium;
+	if (settings.platform === "wigle") {
+		if (settings.wigleMetric === "rank" || settings.wigleMetric === "monthRank") {
+			return MARK_KEYS.podium;
+		}
+		if (settings.wigleMetric === "cell") {
+			return MARK_KEYS.antenna;
+		}
 	}
 	if (settings.platform === "wardrift") {
 		switch (settings.wardriftMetric) {

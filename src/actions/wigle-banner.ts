@@ -10,7 +10,8 @@ import { readWigleMetric, type WigleUserStats } from "../services/wigle.js";
 
 /**
  * WiGLE Sample A composed dial banner (display-only).
- * Cols: WIFI GPS | RANK + MONTHLY RANK | MONTHLY EVENTS | BT GPS
+ * Cols: WIFI | RANK + MONTHLY RANK | MONTHLY EVENTS | BT
+ * (No GPS-labeled columns — keypad GPS options were removed.)
  */
 @action({ UUID: "com.jazzactual.wardeck.wigle-banner" })
 export class WigleBannerAction extends DialBannerAction {
@@ -37,7 +38,7 @@ export function buildWigleBannerModel(): ComposedBannerModel {
 		identity: buildIdentityLine([truncateName(username)], "WiGLE"),
 		brand: "WIGLE",
 		columns: [
-			{ kind: "solo", label: "WIFI GPS", value: asNumber(readWigleMetric(data, "wifiGps")) },
+			{ kind: "solo", label: "WIFI", value: asNumber(readWigleMetric(data, "wifiAll")) },
 			{
 				kind: "split",
 				left: { label: "RANK", value: asNumber(readWigleMetric(data, "rank")), x: 212 },
@@ -53,7 +54,7 @@ export function buildWigleBannerModel(): ComposedBannerModel {
 				value: asNumber(readWigleMetric(data, "monthEvents")),
 				x: 412
 			},
-			{ kind: "solo", label: "BT GPS", value: readBtGps(data), x: 612 }
+			{ kind: "solo", label: "BT", value: readBt(data), x: 612 }
 		]
 	};
 }
@@ -64,20 +65,20 @@ function emptyModel(statusMessage: string): ComposedBannerModel {
 		brand: "WIGLE",
 		statusMessage,
 		columns: [
-			{ kind: "solo", label: "WIFI GPS", value: null },
+			{ kind: "solo", label: "WIFI", value: null },
 			{
 				kind: "split",
 				left: { label: "RANK", value: null, x: 212 },
 				right: { label: "MONTHLY RANK", value: null, x: 300 }
 			},
 			{ kind: "solo", label: "MONTHLY EVENTS", value: null, x: 412 },
-			{ kind: "solo", label: "BT GPS", value: null, x: 612 }
+			{ kind: "solo", label: "BT", value: null, x: 612 }
 		]
 	};
 }
 
-function readBtGps(data: WigleUserStats): number | null {
-	const value = data.statistics?.discoveredBtGPS;
+function readBt(data: WigleUserStats): number | null {
+	const value = data.statistics?.discoveredBt;
 	return typeof value === "number" && !Number.isNaN(value) ? value : null;
 }
 

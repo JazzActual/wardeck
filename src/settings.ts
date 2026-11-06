@@ -3,13 +3,11 @@ import { z } from "zod";
 export const PlatformSchema = z.enum(["wigle", "wdgwars", "wardrift"]);
 export type Platform = z.infer<typeof PlatformSchema>;
 
-export const WigleMetricSchema = z.enum([
-	"wifiGps",
-	"wifiAll",
-	"rank",
-	"monthRank",
-	"monthEvents"
-]);
+/** WiGLE keypad metrics — no GPS-labeled options (wifiGps migrates → wifiAll). */
+export const WigleMetricSchema = z.preprocess(
+	(value) => (value === "wifiGps" ? "wifiAll" : value),
+	z.enum(["wifiAll", "rank", "monthRank", "monthEvents", "cell"])
+);
 export type WigleMetric = z.infer<typeof WigleMetricSchema>;
 
 export const WdgwarsMetricSchema = z.enum([
@@ -65,7 +63,7 @@ export type GlobalSettings = z.infer<typeof GlobalSettingsSchema>;
 
 export const StatActionSettingsSchema = z.object({
 	platform: PlatformSchema.default("wigle"),
-	wigleMetric: WigleMetricSchema.default("wifiGps"),
+	wigleMetric: WigleMetricSchema.default("wifiAll"),
 	wdgwarsMetric: WdgwarsMetricSchema.default("total"),
 	wardriftMetric: WardriftMetricSchema.default("networks")
 });
@@ -135,11 +133,11 @@ export const PLATFORM_URLS: Record<Platform, string> = {
 export const ALL_PLATFORMS: Platform[] = ["wigle", "wdgwars", "wardrift"];
 
 export const WIGLE_METRIC_LABELS: Record<WigleMetric, string> = {
-	wifiGps: "WiFi GPS",
 	wifiAll: "WiFi",
 	rank: "Rank",
 	monthRank: "Mo Rank",
-	monthEvents: "Mo Events"
+	monthEvents: "Mo Events",
+	cell: "Cell"
 };
 
 export const WDGWARS_METRIC_LABELS: Record<WdgwarsMetric, string> = {

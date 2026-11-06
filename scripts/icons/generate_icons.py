@@ -2,7 +2,7 @@
 """Generate Wardeck Stream Deck icons from Lucide (lucide-static, ISC).
 
 Marks (all Lucide; combo = wifi + bluetooth compose):
-  wifi · bluetooth · combo · radio · podium · car · calendar · swords · coins · biceps-flexed · zap · user-round-group · plane · network · award
+  wifi · bluetooth · combo · radio · podium · car · calendar · swords · coins · biceps-flexed · zap · user-round-group · plane · network · award · antenna
 
 Sizes: category 28/56, action list 20/40, key 72/144, marketplace 288/512
 
@@ -49,6 +49,7 @@ SINGLE_MARKS = (
     "plane",
     "network",
     "award",
+    "antenna",
 )
 
 

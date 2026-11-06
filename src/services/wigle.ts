@@ -88,8 +88,6 @@ export async function fetchWigleUserStats(settings: GlobalSettings): Promise<Wig
 export function readWigleMetric(data: WigleUserStats, metric: WigleMetric): number | string | null {
 	const stats = data.statistics;
 	switch (metric) {
-		case "wifiGps":
-			return stats?.discoveredWiFiGPS ?? null;
 		case "wifiAll":
 			return stats?.discoveredWiFi ?? null;
 		case "rank":
@@ -98,6 +96,8 @@ export function readWigleMetric(data: WigleUserStats, metric: WigleMetric): numb
 			return data.monthRank ?? stats?.monthRank ?? null;
 		case "monthEvents":
 			return stats?.eventMonthCount ?? null;
+		case "cell":
+			return stats?.discoveredCell ?? null;
 		default:
 			return null;
 	}

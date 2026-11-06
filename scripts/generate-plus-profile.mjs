@@ -12,7 +12,7 @@
  * Layout (4×2 keypad + 4 Encoder dials):
  *
  *   Page 1 — WiGLE + WDGWars
- *     [WiGLE Sum] [WiFi GPS] [Rank] [Refresh]
+ *     [WiGLE Sum] [WiFi] [Rank] [Refresh]
  *     [WDG Sum]   [Total]    [WiFi] [Next →]
  *     Dials: WiGLE Banner ×4 (Sample A composed strip)
  *
@@ -114,7 +114,7 @@ function pageNavAction({ page, col, row, uuid, name }) {
 }
 
 const defaultStatSettings = {
-	wigleMetric: "wifiGps",
+	wigleMetric: "wifiAll",
 	wdgwarsMetric: "total",
 	wardriftMetric: "networks"
 };
@@ -182,7 +182,7 @@ function encoderActions(page, uuid, name) {
 /** Page 1 keypad: WiGLE + WDGWars overview. */
 const page1Keypad = {
 	"0,0": summary(1, 0, 0, "wigle", "WiGLE"),
-	"1,0": stat(1, 1, 0, "wigle", "wigleMetric", "wifiGps", "WiFi GPS"),
+	"1,0": stat(1, 1, 0, "wigle", "wigleMetric", "wifiAll", "WiFi"),
 	"2,0": stat(1, 2, 0, "wigle", "wigleMetric", "rank", "Rank"),
 	"3,0": refresh(1, 3, 0),
 	"0,1": summary(1, 0, 1, "wdgwars", "WDGWars"),
@@ -277,7 +277,7 @@ function main() {
 
 		console.log(`Wrote ${OUT}`);
 		console.log("Device: Stream Deck+ (20GBD9901)  DeviceType: 7");
-		console.log("Page 1: WiGLE summary/wifiGps/rank + WDGWars summary/total/wifi + Refresh + Next");
+		console.log("Page 1: WiGLE summary/wifiAll/rank + WDGWars summary/total/wifi + Refresh + Next");
 		console.log("Page 2: Prev + Wardrift summary/networks/routes/streak + WDGWars BLE");
 		console.log("Encoders: page1 WiGLE Banner ×4; page2 Wardrift Banner ×4");
 		console.log("WDGWars Banner: assign manually to all four dials when desired");

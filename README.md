@@ -185,7 +185,7 @@ Lucide-only monochrome marks (`lucide-static`, ISC), white/light on near-black k
 | `imgs/marks/plane` | `plane` | WDGWars Aircraft |
 | `imgs/marks/network` | `network` | WDGWars Mesh |
 | `imgs/marks/award` | `award` | WDGWars Badges (count) |
-| `imgs/marks/antenna` | `antenna` | WiGLE Cell |
+| `imgs/marks/radio-tower` | `radio-tower` | WiGLE Cell |
 
 Category uses wifi; marketplace / summary / refresh default to combo. Regenerate with `npm run icons` (requires Pillow, cairosvg, and `npm install` for lucide-static).
 

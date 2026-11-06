@@ -60,7 +60,26 @@ The plugin ships a pre-laid **Wardeck** profile for **Stream Deck+** (8 LCD keys
 | --- | --- | --- | --- |
 | WDGWars BLE | Streak | *(free)* | *(free)* |
 
-Dials / touch strip are left unbound (Wardeck actions are Keypad-only; dial support is a later phase). Keys use the plugin’s shared monochrome marks (`imgs/marks/*`).
+**Dials:** composed 800×100 banners sliced into four 200×100 Encoder pixmaps (display-only — no rotate / press / touch handlers).
+
+| Page | Default dial action |
+| --- | --- |
+| Page 1 | **WiGLE Banner** ×4 (WIFI GPS · RANK+MONTHLY RANK · MONTHLY EVENTS · BT GPS) |
+| Page 2 | **Wardrift Banner** ×4 (Networks · Routes+Threats · Streak · Coin+To next) |
+
+**WDGWars Banner** (TOTAL · WIFI+BLE · AIRCRAFT · MESH+BADGES) is available in the action list — assign it to all four dials when you want that strip (e.g. swap page 1). Keys use the plugin’s shared monochrome marks (`imgs/marks/*`).
+
+### Assign a composed banner to all four Plus dials
+
+The strip only reads as one banner when **every** dial on the page uses the **same** banner action.
+
+1. In Stream Deck, select your **Stream Deck+** device and the **Wardeck** profile (or any custom profile).
+2. Open the **Wardeck** category in the action list.
+3. Drag **WiGLE Banner**, **WDGWars Banner**, or **Wardrift Banner** onto dial 1, then dial 2, dial 3, and dial 4.
+4. Leave dial settings empty — there is no Property Inspector on banners; credentials stay on any Keypad action’s global settings.
+5. Mixing actions (or leaving a dial empty) breaks the full-strip illusion.
+
+Bundled Plus profile defaults: page 1 → WiGLE Banner ×4, page 2 → Wardrift Banner ×4. Existing imported profiles keep prior dial bindings until you reassign or rebuild/re-import.
 
 ### Install / import
 
@@ -139,6 +158,9 @@ Without credentials, keys show `—` and the plugin still runs (no crash). CI / 
 | **Stat** | Configurable platform + metric (WiGLE / WDGWars / Wardrift). Press = manual refresh for that platform. |
 | **Platform Summary** | Logo-style key with primary metric (WiGLE WiFi GPS / WDGWars Total / Wardrift Networks). Press = open platform site. |
 | **Refresh** | Force refresh all or one platform. |
+| **Wardrift Banner** | Encoder-only. Full-strip Wardrift dashboard (name / faction / level·class, networks, routes, threats, streak, coin, to next). Display-only. Empty/error state without credentials. Streak `0` shows as `0`. |
+| **WiGLE Banner** | Encoder-only. Sample A: WIFI GPS · RANK + MONTHLY RANK · MONTHLY EVENTS · BT GPS. Labels spell **MONTHLY** (never `MO`). Display-only. |
+| **WDGWars Banner** | Encoder-only. Sample A: TOTAL · WIFI + BLE · AIRCRAFT · MESH + BADGES (badge count). Display-only. |
 
 Default polling: WiGLE **15 min**, WDGWars **5 min**, Wardrift **15 min** (tunable in PI). Cache + exponential backoff on `429` / `5xx`.
 
@@ -157,11 +179,13 @@ White/light on near-black keys; white-on-transparent list glyphs. Bluetooth is t
 ## Project layout
 
 ```
-com.jazzactual.wardeck.sdPlugin/   # packaged plugin (manifest, UI, imgs, profiles, built bin/)
-  profiles/Wardeck.streamDeckProfile   # Stream Deck+ default layout
+com.jazzactual.wardeck.sdPlugin/   # packaged plugin (manifest, UI, imgs, layouts, profiles, built bin/)
+  layouts/composed-banner.json         # Shared Encoder full-canvas pixmap layout
+  profiles/Wardeck.streamDeckProfile   # Stream Deck+ default layout (keys + dials)
 src/
   plugin.ts
-  actions/           # stat, platform-summary, refresh
+  actions/           # stat, platform-summary, refresh, *-banner
+  banner/            # shared 800×100 compose + dial sync
   services/          # cache, wigle, wdgwars, wardrift
   settings.ts        # Zod schemas
   icons.ts           # key image paths

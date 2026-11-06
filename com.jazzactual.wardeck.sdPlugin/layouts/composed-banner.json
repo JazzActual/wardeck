@@ -1,0 +1,11 @@
+{
+	"$schema": "https://schemas.elgato.com/streamdeck/plugins/layout.json",
+	"id": "composed-banner",
+	"items": [
+		{
+			"key": "banner",
+			"type": "pixmap",
+			"rect": [0, 0, 200, 100]
+		}
+	]
+}

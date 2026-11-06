@@ -52,9 +52,9 @@ export function platformKeyImage(_platform: Platform): string {
  * - WDGWars Total → radio; BLE → bluetooth; Aircraft → plane;
  *   Mesh → network; Badges → award
  * - WiGLE Rank / Month rank → podium; Cell → radio-tower
- * - Wardrift Routes → car; Streak → calendar; Threats → swords;
- *   Coin → coins; Level → biceps-flexed; To next → zap;
- *   Faction → user-round-group
+ * - Wardrift Networks → radio; Routes → car; Streak → calendar;
+ *   Threats → swords; Coin → coins; Level → biceps-flexed;
+ *   To next → zap; Faction → user-round-group
  * - WiFi-specific / else → wifi
  */
 export function statKeyImage(settings: StatActionSettings): string {
@@ -84,6 +84,8 @@ export function statKeyImage(settings: StatActionSettings): string {
 	}
 	if (settings.platform === "wardrift") {
 		switch (settings.wardriftMetric) {
+			case "networks":
+				return MARK_KEYS.radio;
 			case "routes":
 				return MARK_KEYS.car;
 			case "streak":

@@ -320,6 +320,59 @@ assert.equal("MONTHLY RANK".includes("MO "), false);
 assert.ok("MONTHLY RANK".startsWith("MONTHLY"));
 assert.ok("MONTHLY EVENTS".startsWith("MONTHLY"));
 
+// Sample A Lucide label-band glyphs (approved preview maps).
+const repoRoot = path.resolve(pluginRoot, "..");
+const lucideMarksSrc = fs.readFileSync(path.join(repoRoot, "src/banner/lucide-marks.ts"), "utf8");
+for (const mark of [
+	"radio",
+	"car",
+	"swords",
+	"calendar",
+	"coins",
+	"zap",
+	"wifi",
+	"podium",
+	"bluetooth",
+	"plane",
+	"network",
+	"award"
+]) {
+	assert.ok(lucideMarksSrc.includes(`${mark}:`), `lucide-marks missing ${mark}`);
+}
+const renderSrc = fs.readFileSync(path.join(repoRoot, "src/banner/render.ts"), "utf8");
+assert.ok(renderSrc.includes("renderLucideGlyph"), "render missing Lucide painter");
+assert.ok(renderSrc.includes("SOLO_GLYPH = 15"), "solo glyph size drift");
+assert.ok(renderSrc.includes("SPLIT_GLYPH = 12"), "split glyph size drift");
+
+function assertBannerLucide(rel, needles) {
+	const src = fs.readFileSync(path.join(repoRoot, rel), "utf8");
+	for (const needle of needles) {
+		assert.ok(src.includes(needle), `${rel} missing ${needle}`);
+	}
+}
+assertBannerLucide("src/actions/wardrift-banner.ts", [
+	'lucide: "radio"',
+	'lucide: "car"',
+	'lucide: "swords"',
+	'lucide: "calendar"',
+	'lucide: "coins"',
+	'lucide: "zap"'
+]);
+assertBannerLucide("src/actions/wigle-banner.ts", [
+	'lucide: "wifi"',
+	'lucide: "podium"',
+	'lucide: "calendar"',
+	'lucide: "bluetooth"'
+]);
+assertBannerLucide("src/actions/wdgwars-banner.ts", [
+	'lucide: "radio"',
+	'lucide: "wifi"',
+	'lucide: "bluetooth"',
+	'lucide: "plane"',
+	'lucide: "network"',
+	'lucide: "award"'
+]);
+
 // Auto-update schedules: 4h interval plan + daily WiGLE plan.
 const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
 function planIntervalPoll(lastFetchAt, intervalMs, nowMs) {

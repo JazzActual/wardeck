@@ -179,6 +179,7 @@ Lucide-only monochrome marks (`lucide-static`, ISC), white/light on near-black k
 | `imgs/marks/swords` | `swords` | Wardrift Threats |
 | `imgs/marks/coins` | `coins` | Wardrift Coin |
 | `imgs/marks/biceps-flexed` | `biceps-flexed` | Wardrift Level |
+| `imgs/marks/zap` | `zap` | Wardrift To next |
 
 Category uses wifi; marketplace / summary / refresh default to combo. Regenerate with `npm run icons` (requires Pillow, cairosvg, and `npm install` for lucide-static).
 

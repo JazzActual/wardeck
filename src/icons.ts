@@ -10,7 +10,8 @@ export type IconMark =
 	| "calendar"
 	| "swords"
 	| "coins"
-	| "biceps-flexed";
+	| "biceps-flexed"
+	| "zap";
 
 const MARK_KEYS: Record<IconMark, string> = {
 	wifi: "imgs/marks/wifi/key",
@@ -21,7 +22,8 @@ const MARK_KEYS: Record<IconMark, string> = {
 	calendar: "imgs/marks/calendar/key",
 	swords: "imgs/marks/swords/key",
 	coins: "imgs/marks/coins/key",
-	"biceps-flexed": "imgs/marks/biceps-flexed/key"
+	"biceps-flexed": "imgs/marks/biceps-flexed/key",
+	zap: "imgs/marks/zap/key"
 };
 
 export function markKeyImage(mark: IconMark): string {
@@ -45,7 +47,7 @@ export function platformKeyImage(platform: Platform): string {
  * - WDGWars BLE → bluetooth
  * - WiGLE Rank / Month rank → podium
  * - Wardrift Routes → car; Streak → calendar; Threats → swords;
- *   Coin → coins; Level → biceps-flexed
+ *   Coin → coins; Level → biceps-flexed; To next → zap
  * - else wifi
  */
 export function statKeyImage(settings: StatActionSettings): string {
@@ -70,6 +72,8 @@ export function statKeyImage(settings: StatActionSettings): string {
 				return MARK_KEYS.coins;
 			case "level":
 				return MARK_KEYS["biceps-flexed"];
+			case "expToNext":
+				return MARK_KEYS.zap;
 			default:
 				break;
 		}
